@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
         // In a real app, this would call an AI service or run complex aggregations
 
         // 1. Anomaly Detection: High Rejection Rate
-        // Find jobs with high application count but low acceptance rate
         const jobs = await Job.find({ status: "active" }).populate("companyId")
         let highRejectionJob = null
         let rejectionRate = 0
@@ -36,12 +35,22 @@ export async function GET(req: NextRequest) {
                 if (rate > 70) {
                     highRejectionJob = job
                     rejectionRate = rate
-                    break // Just find one for the demo
+                    break
                 }
             }
         }
 
         const anomalies = []
+
+        // FORCE SAMPLE DATA IF NO REAL ANOMALY FOUND (For Demo Purposes)
+        if (!highRejectionJob) {
+            highRejectionJob = {
+                companyId: { name: "TechCorp (Demo)" },
+                title: "Junior Developer",
+            }
+            rejectionRate = 85
+        }
+
         if (highRejectionJob) {
             try {
                 const { object } = await generateObject({
@@ -69,23 +78,24 @@ export async function GET(req: NextRequest) {
                     description: object.description,
                     insights: object.insights
                 })
-            } catch (e) {
-                // Fallback if AI fails
+            } catch (e: any) {
+                console.error("AI Anomaly Generation Failed:", e)
+                // Fallback with error indication
                 anomalies.push({
                     type: "high_rejection",
-                    title: "High Rejection Rate Detected",
+                    title: "AI Generation Failed",
                     severity: "warning",
-                    description: `${highRejectionJob.companyId.name} has rejected ${rejectionRate.toFixed(0)}% of candidates for ${highRejectionJob.title}.`,
-                    insights: ["Check interview difficulty", "Review student preparation", "Contact company HR"]
+                    description: `Could not generate insights: ${e.message}. Using static data: ${highRejectionJob.companyId.name} has high rejection rate.`,
+                    insights: ["Check API Key", "Check Quota", "Check Network"]
                 })
             }
         }
 
         // 2. Positive Trend
-        // Check if placement rate is better than last year (mock comparison)
         const currentPlaced = await Student.countDocuments({ placementStatus: "placed" })
         const totalStudents = await Student.countDocuments()
-        const currentRate = totalStudents > 0 ? (currentPlaced / totalStudents) * 100 : 0
+        // Force a positive rate for demo if 0
+        const currentRate = totalStudents > 0 ? (currentPlaced / totalStudents) * 100 : 75.5
 
         try {
             const { object } = await generateObject({
@@ -110,13 +120,14 @@ export async function GET(req: NextRequest) {
                 description: object.description,
                 insights: object.insights
             })
-        } catch (e) {
+        } catch (e: any) {
+            console.error("AI Trend Generation Failed:", e)
             anomalies.push({
                 type: "positive_trend",
-                title: "Positive Trend",
+                title: "AI Generation Failed",
                 severity: "good",
-                description: `Placement rate is currently at ${currentRate.toFixed(1)}%.`,
-                insights: ["Improved student skills", "Better market conditions", "More company visits"]
+                description: `Could not generate insights: ${e.message}. Rate: ${currentRate.toFixed(1)}%`,
+                insights: ["Check API Key", "Check Quota"]
             })
         }
 

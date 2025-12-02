@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useChat } from "ai/react"
+import { useChat } from "@ai-sdk/react"
 
 export default function TPOAIInsightsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
@@ -45,7 +45,8 @@ Salary: Competitive`)
   const [improvedJdOpen, setImprovedJdOpen] = useState(false)
 
   // Chat Hook
-  const { messages, input, handleInputChange, handleSubmit: handleChatSubmit } = useChat({
+  // Chat Hook
+  const { messages, append } = useChat({
     api: "/api/ai/chat",
     initialMessages: [
       {
@@ -53,8 +54,31 @@ Salary: Competitive`)
         role: "assistant",
         content: "Hello! I'm the placement policy assistant. I can help students with questions about eligibility criteria, placement rules, and FAQs."
       }
-    ]
-  })
+    ],
+    onError: (error: Error) => {
+      console.error("Chat error:", error)
+      toast.error("Failed to send message")
+    }
+  } as any) as any
+
+  const [input, setInput] = useState("")
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value)
+  }
+
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim()) return
+
+    const userMessage = input
+    setInput("")
+
+    await append({
+      role: "user",
+      content: userMessage
+    })
+  }
 
   useEffect(() => {
     fetchInsights()

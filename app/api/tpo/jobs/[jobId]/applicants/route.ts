@@ -6,9 +6,10 @@ import { Student } from "@/lib/models/Student"
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { jobId: string } }
+    props: { params: Promise<{ jobId: string }> }
 ) {
     try {
+        const params = await props.params
         const userId = await verifyAuth(req)
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
