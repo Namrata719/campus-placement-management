@@ -12,12 +12,8 @@ import {
     Users,
     Building2,
     UserCheck,
-    Award,
-    Menu
+    Award
 } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { DashboardSidebar } from "./sidebar"
-import { Button } from "./ui/button"
 
 export function MobileNav() {
     const pathname = usePathname()
@@ -74,20 +70,7 @@ export function MobileNav() {
                 )
             })}
 
-            <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="flex flex-col items-center justify-center gap-1 h-auto py-0 hover:bg-transparent">
-                        <Menu className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-xs font-medium text-muted-foreground">Menu</span>
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-64">
-                    <SheetHeader className="sr-only">
-                        <SheetTitle>Navigation Menu</SheetTitle>
-                    </SheetHeader>
-                    <DashboardSidebar />
-                </SheetContent>
-            </Sheet>
+
         </div>
     )
 }

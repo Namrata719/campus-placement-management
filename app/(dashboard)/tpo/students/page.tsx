@@ -204,10 +204,16 @@ export default function TPOStudentsPage() {
 
     const targetEmails = students.filter(s => ids.includes(s.id)).map(s => s.email)
 
+    if (targetEmails.length === 0) {
+      toast.error("No valid email addresses found")
+      return
+    }
+
     try {
       const res = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include authentication cookies
         body: JSON.stringify({
           to: targetEmails.join(","),
           subject: "Important Update from TPO",
@@ -216,12 +222,19 @@ export default function TPOStudentsPage() {
       })
 
       const json = await res.json()
+
+      if (res.status === 401) {
+        toast.error("Authentication failed. Please refresh and try again.")
+        return
+      }
+
       if (json.success) {
-        toast.success("Email sent successfully")
+        toast.success(`Email sent to ${targetEmails.length} student(s)`)
       } else {
-        toast.error("Failed to send email")
+        toast.error(json.error || "Failed to send email")
       }
     } catch (error) {
+      console.error("Email send error:", error)
       toast.error("Failed to send email")
     }
   }

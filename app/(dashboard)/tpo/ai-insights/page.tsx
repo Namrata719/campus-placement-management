@@ -45,9 +45,11 @@ Salary: Competitive`)
   const [improvedJdOpen, setImprovedJdOpen] = useState(false)
 
   // Chat Hook
-  // Chat Hook
   const { messages, append } = useChat({
     api: "/api/ai/chat",
+    body: {
+      context: "policy - Campus Placement Policy Assistant"
+    },
     initialMessages: [
       {
         id: "welcome",

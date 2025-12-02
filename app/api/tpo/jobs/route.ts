@@ -122,12 +122,25 @@ export async function PUT(req: NextRequest) {
                     // Add more criteria as needed
                 }).select("email")
 
-                // Send emails asynchronously
-                eligibleStudents.forEach(async (student: any) => {
+                console.log(`Sending job notifications to ${eligibleStudents.length} eligible students`)
+
+                // Send emails in parallel with error handling
+                const emailPromises = eligibleStudents.map(async (student: any) => {
                     if (student.email) {
-                        await sendJobNotification(student.email, job.title, companyName, job._id.toString())
+                        try {
+                            await sendJobNotification(student.email, job.title, companyName, job._id.toString())
+                            return { success: true, email: student.email }
+                        } catch (error) {
+                            console.error(`Failed to send notification to ${student.email}:`, error)
+                            return { success: false, email: student.email }
+                        }
                     }
+                    return { success: false, email: "no-email" }
                 })
+
+                const results = await Promise.all(emailPromises)
+                const successCount = results.filter(r => r.success).length
+                console.log(`Successfully sent ${successCount}/${eligibleStudents.length} job notifications`)
             }
         }
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { Menu, GraduationCap } from "lucide-react"
 import { DashboardSidebar } from "./sidebar"
 import Link from "next/link"
@@ -20,6 +20,7 @@ export function MobileHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64">
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <DashboardSidebar />
         </SheetContent>
       </Sheet>

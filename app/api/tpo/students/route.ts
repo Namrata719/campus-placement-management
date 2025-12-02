@@ -5,6 +5,7 @@ import { Student } from "@/lib/models/Student"
 import { Company } from "@/lib/models/Company"
 import { User } from "@/lib/models/User"
 import bcrypt from "bcryptjs"
+import { sendStudentStatusUpdate } from "@/lib/mail"
 
 export async function GET(req: NextRequest) {
     try {
@@ -152,18 +153,84 @@ export async function PUT(req: NextRequest) {
 
         await connectDB()
         const body = await req.json()
-        const { studentIds, status } = body
+        const { studentIds, status, studentId, name, cgpa, backlogs } = body
 
-        if (!studentIds || !Array.isArray(studentIds) || !status) {
-            return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+        // Handle bulk status update
+        if (studentIds && Array.isArray(studentIds) && status) {
+            // Update the status
+            await Student.updateMany(
+                { _id: { $in: studentIds } },
+                { $set: { status } }
+            )
+
+            // Send email notifications to all affected students
+            const students = await Student.find({ _id: { $in: studentIds } }).select('email firstName lastName')
+
+            const emailPromises = students.map(async (student: any) => {
+                if (student.email) {
+                    try {
+                        const studentName = `${student.firstName} ${student.lastName}`
+                        await sendStudentStatusUpdate(student.email, studentName, status)
+                        return { success: true, email: student.email }
+                    } catch (error) {
+                        console.error(`Failed to send status update email to ${student.email}:`, error)
+                        return { success: false, email: student.email }
+                    }
+                }
+                return { success: false, email: 'no-email' }
+            })
+
+            const results = await Promise.all(emailPromises)
+            const successCount = results.filter(r => r.success).length
+            console.log(`Sent ${successCount}/${students.length} student status update notifications`)
+
+            return NextResponse.json({ success: true })
         }
 
-        await Student.updateMany(
-            { _id: { $in: studentIds } },
-            { $set: { status } }
-        )
+        // Handle individual student update
+        if (studentId) {
+            const updateData: any = {}
+            let shouldSendEmail = false
+            let oldStatus = null
 
-        return NextResponse.json({ success: true })
+            // Get current student data if status is being updated
+            if (status) {
+                const currentStudent = await Student.findById(studentId)
+                oldStatus = currentStudent?.status
+                shouldSendEmail = status !== oldStatus
+            }
+
+            if (name) {
+                const nameParts = name.trim().split(" ")
+                updateData.firstName = nameParts[0]
+                updateData.lastName = nameParts.slice(1).join(" ") || "."
+            }
+
+            if (cgpa !== undefined) updateData.cgpa = parseFloat(cgpa)
+            if (backlogs !== undefined) updateData.backlogs = parseInt(backlogs)
+            if (status) updateData.status = status
+
+            const updatedStudent = await Student.findByIdAndUpdate(
+                studentId,
+                updateData,
+                { new: true }
+            )
+
+            // Send email notification if status changed
+            if (shouldSendEmail && updatedStudent) {
+                try {
+                    const studentName = `${updatedStudent.firstName} ${updatedStudent.lastName}`
+                    await sendStudentStatusUpdate(updatedStudent.email, studentName, status)
+                    console.log(`Sent status update email to ${updatedStudent.email}`)
+                } catch (error) {
+                    console.error(`Failed to send email to ${updatedStudent.email}:`, error)
+                }
+            }
+
+            return NextResponse.json({ success: true })
+        }
+
+        return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     } catch (error) {
         console.error("Error updating students:", error)
         return NextResponse.json({ error: "Failed to update students" }, { status: 500 })

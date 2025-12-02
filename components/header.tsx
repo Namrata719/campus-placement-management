@@ -3,25 +3,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Bell, Search, Moon, Sun, Menu } from "lucide-react"
+import { Bell, Search, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
 interface DashboardHeaderProps {
   title: string
   subtitle?: string
-  onMenuClick?: () => void
 }
 
-export function DashboardHeader({ title, subtitle, onMenuClick }: DashboardHeaderProps) {
+export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
   const { theme, setTheme } = useTheme()
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur-sm px-4 lg:px-6">
-      {/* Mobile menu button */}
-      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
-        <Menu className="h-5 w-5" />
-      </Button>
-
       {/* Title */}
       <div className="flex-1">
         <h1 className="text-lg font-semibold">{title}</h1>

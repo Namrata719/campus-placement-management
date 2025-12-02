@@ -5,6 +5,7 @@ import { Application } from "@/lib/models/Application"
 import { Job } from "@/lib/models/Job"
 import { Student } from "@/lib/models/Student"
 import { Company } from "@/lib/models/Company"
+import { sendApplicationStatusUpdate } from "@/lib/mail"
 
 export async function GET(req: NextRequest) {
     try {
@@ -54,16 +55,37 @@ export async function PUT(req: NextRequest) {
         const body = await req.json()
         const { applicationId, status } = body
 
-        await Application.findByIdAndUpdate(applicationId, {
-            status,
-            $push: {
-                timeline: {
-                    status,
-                    date: new Date(),
-                    comment: `Moved to ${status} by TPO`
+        // Update application and get the updated document
+        const application = await Application.findByIdAndUpdate(
+            applicationId,
+            {
+                status,
+                $push: {
+                    timeline: {
+                        status,
+                        date: new Date(),
+                        comment: `Moved to ${status} by TPO`
+                    }
                 }
+            },
+            { new: true }
+        ).populate("studentId").populate("jobId").populate("companyId")
+
+        // Send email notification to student
+        if (application) {
+            const student = application.studentId as any
+            const job = application.jobId as any
+            const company = application.companyId as any
+
+            if (student?.email && job?.title && company?.name) {
+                await sendApplicationStatusUpdate(
+                    student.email,
+                    job.title,
+                    company.name,
+                    status
+                )
             }
-        })
+        }
 
         return NextResponse.json({ success: true })
     } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { sendEmail } from "@/lib/email"
+import { sendCustomMessage } from "@/lib/mail"
 import { verifyAuth } from "@/lib/auth"
 
 export async function POST(req: NextRequest) {
@@ -16,14 +16,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
         }
 
-        const result = await sendEmail({
-            to,
-            subject,
-            text: message,
-            html: `<p>${message}</p>` // Basic HTML wrapper
-        })
+        // Use the dedicated custom message function
+        const success = await sendCustomMessage(to, subject, message)
 
-        if (result.success) {
+        if (success) {
             return NextResponse.json({ success: true, message: "Email sent successfully" })
         } else {
             return NextResponse.json({ error: "Failed to send email" }, { status: 500 })
