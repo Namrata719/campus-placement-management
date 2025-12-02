@@ -37,10 +37,10 @@ PlaceMe is a modern, feature-rich Campus Placement Management System developed b
 - ✅ Browse and apply for jobs matching your profile
 - ✅ Track application status in real-time
 - ✅ Manage multiple resumes
-- ✅ AI-powered job recommendations
+- ✅ **AI-powered Career Coach & Policy Assistant**
 - ✅ Resume analysis and skill gap identification
 - ✅ Interview schedule management
-- ✅ Placement event notifications
+- ✅ **Real-time Email Notifications**
 
 ### 🏢 For Companies
 - ✅ Post job openings with detailed requirements
@@ -57,9 +57,10 @@ PlaceMe is a modern, feature-rich Campus Placement Management System developed b
 - ✅ Company verification and approval
 - ✅ Job posting moderation
 - ✅ Placement drive scheduling
+- ✅ **Automated & Manual Email Broadcasts**
+- ✅ **Notification Testing Dashboard**
 - ✅ Generate placement reports
 - ✅ Department-wise statistics
-- ✅ Broadcast notifications
 
 ---
 
@@ -73,6 +74,7 @@ PlaceMe is a modern, feature-rich Campus Placement Management System developed b
 - **State Management:** React Context API
 - **Charts:** Recharts
 - **Forms:** React Hook Form + Zod
+- **AI Integration:** Vercel AI SDK
 
 ### Backend
 - **Runtime:** Node.js
@@ -80,6 +82,8 @@ PlaceMe is a modern, feature-rich Campus Placement Management System developed b
 - **Authentication:** JWT (JSON Web Tokens)
 - **Validation:** Zod
 - **Password Hashing:** bcrypt / SHA-256
+- **Email Service:** Nodemailer (SMTP)
+- **AI Model:** Google Gemini 1.5 Flash
 
 ### Database
 - **Primary DB:** MongoDB Atlas
@@ -126,6 +130,16 @@ PlaceMe is a modern, feature-rich Campus Placement Management System developed b
 
    # Application URL
    NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+   # Email Configuration (SMTP)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=your-app-specific-password
+   SMTP_FROM="Campus Placement" <noreply@college.edu>
+
+   # Google AI (Gemini)
+   GOOGLE_GENERATIVE_AI_API_KEY=your-gemini-api-key
 
    # Node Environment
    NODE_ENV=development
@@ -364,7 +378,8 @@ npm start
 
 ## 📈 Future Enhancements
 
-- [ ] Email notification system (SMTP integration)
+- [x] **Email notification system (SMTP integration)**
+- [x] **AI chatbot for student queries**
 - [ ] Mobile application (React Native)
 - [ ] Video interview feature (WebRTC)
 - [ ] Resume builder integration
@@ -373,7 +388,6 @@ npm start
 - [ ] Payment gateway for placement fees
 - [ ] Alumni portal
 - [ ] Document verification system
-- [ ] AI chatbot for student queries
 
 ---
 
@@ -426,13 +440,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [API Documentation](docs/API_DOCUMENTATION.md) - API reference
 - [User Guide](docs/USER_GUIDE.md) - How to use the platform
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
+- **[SMTP Setup Guide](SMTP_SETUP_GUIDE.md)** - Email configuration
+- **[Testing Guide](TESTING_GUIDE.md)** - How to test notifications
+- **[Notification System](NOTIFICATION_SYSTEM.md)** - Technical details
 
 ---
 
-<div align="center">
-
-**Made with ❤️ by CSE Final Year Students, SBGI Miraj**
-
-⭐ Star this repository if you find it helpful!
-
-</div>
