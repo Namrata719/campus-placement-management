@@ -2,6 +2,8 @@
 
 ## Generated Visual Diagrams ✅
 
+> **Note:** For standard UML diagrams (Use Case, Class, Sequence, Activity) using Mermaid syntax, please refer to [docs/UML_DIAGRAMS.md](docs/UML_DIAGRAMS.md).
+
 I've created the following visual diagrams for your project:
 
 ### 1. ✅ System Architecture Diagram

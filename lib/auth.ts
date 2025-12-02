@@ -79,15 +79,15 @@ export async function verifyAuth(req: NextRequest): Promise<string | null> {
   return null
 }
 
+import bcrypt from "bcryptjs"
+
 export function hashPassword(password: string): string {
-  // In production, use bcrypt. For demo, we'll use a simple hash
-  // This is a placeholder - implement proper bcrypt hashing
-  const crypto = require("crypto")
-  return crypto.createHash("sha256").update(password).digest("hex")
+  const salt = bcrypt.genSaltSync(10)
+  return bcrypt.hashSync(password, salt)
 }
 
 export function verifyPassword(password: string, hash: string): boolean {
-  return hashPassword(password) === hash
+  return bcrypt.compareSync(password, hash)
 }
 
 export function roleGuard(allowedRoles: UserRole[]) {
