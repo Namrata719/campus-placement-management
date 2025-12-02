@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useChat } from "ai/react"
 
 export default function TPOAIInsightsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
@@ -43,31 +44,63 @@ Salary: Competitive`)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [improvedJdOpen, setImprovedJdOpen] = useState(false)
 
+  // Chat Hook
+  const { messages, input, handleInputChange, handleSubmit: handleChatSubmit } = useChat({
+    api: "/api/ai/chat",
+    initialMessages: [
+      {
+        id: "welcome",
+        role: "assistant",
+        content: "Hello! I'm the placement policy assistant. I can help students with questions about eligibility criteria, placement rules, and FAQs."
+      }
+    ]
+  })
+
   useEffect(() => {
     fetchInsights()
   }, [])
 
   const fetchInsights = async () => {
+    setLoading(true)
     try {
       const res = await fetch("/api/tpo/ai-insights")
       const json = await res.json()
       if (json.success) {
         setAnomalies(json.data.anomalies)
+        if (json.data.anomalies.length > 0) {
+          toast.success(`Found ${json.data.anomalies.length} insights`)
+        }
+      } else {
+        toast.error("Failed to fetch insights")
       }
     } catch (error) {
       console.error("Failed to fetch insights")
+      toast.error("Failed to fetch insights")
     } finally {
       setLoading(false)
     }
   }
 
-  const generateReport = () => {
+  const generateReport = async () => {
     setIsGenerating(true)
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/tpo/ai-insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "generate_report", data: { year: "2024-25" } })
+      })
+      const json = await res.json()
+      if (json.success) {
+        setReportGenerated(true)
+        toast.success("Report generated successfully")
+      } else {
+        toast.error("Failed to generate report")
+      }
+    } catch (error) {
+      toast.error("Failed to generate report")
+    } finally {
       setIsGenerating(false)
-      setReportGenerated(true)
-      toast.success("Report generated successfully")
-    }, 2000)
+    }
   }
 
   const handleAnalyzeJD = async () => {
@@ -142,6 +175,10 @@ Salary: Competitive`)
           <h1 className="text-3xl font-bold">AI Insights</h1>
           <p className="text-muted-foreground">AI-powered analytics and recommendations</p>
         </div>
+        <Button variant="outline" onClick={fetchInsights} disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          Refresh Insights
+        </Button>
       </div>
 
       <Tabs defaultValue="anomalies">
@@ -361,44 +398,30 @@ Salary: Competitive`)
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="border rounded-lg p-4 bg-muted/50 h-[300px] overflow-y-auto space-y-4">
-                  <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Bot className="h-4 w-4 text-primary" />
+                  {messages.map((m: any) => (
+                    <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : ''}`}>
+                      {m.role === 'assistant' && (
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Bot className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                      <div className={`${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'} p-3 rounded-lg max-w-[80%]`}>
+                        <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                      </div>
                     </div>
-                    <div className="bg-background p-3 rounded-lg max-w-[80%]">
-                      <p className="text-sm">
-                        Hello! I'm the placement policy assistant. I can help students with questions about eligibility
-                        criteria, placement rules, and FAQs.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 justify-end">
-                    <div className="bg-primary text-primary-foreground p-3 rounded-lg max-w-[80%]">
-                      <p className="text-sm">Can I sit for multiple companies at the same time?</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="bg-background p-3 rounded-lg max-w-[80%]">
-                      <p className="text-sm">
-                        According to the placement policy, students can sit for multiple companies until they receive
-                        their first offer. Once you accept an offer from a company, you cannot appear for other
-                        companies unless:
-                      </p>
-                      <ul className="text-sm mt-2 space-y-1">
-                        <li>• The new company offers 50% higher CTC (Dream Company rule)</li>
-                        <li>• You formally decline the previous offer (requires TPO approval)</li>
-                      </ul>
-                    </div>
-                  </div>
+                  ))}
                 </div>
                 <div className="flex gap-2">
-                  <Input placeholder="Type a test question..." />
-                  <Button onClick={() => toast.success("Message sent")}>
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  <form onSubmit={handleChatSubmit} className="flex w-full gap-2">
+                    <Input
+                      placeholder="Type a question about placement policies..."
+                      value={input}
+                      onChange={handleInputChange}
+                    />
+                    <Button type="submit">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
                 </div>
               </CardContent>
             </Card>

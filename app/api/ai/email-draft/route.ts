@@ -1,10 +1,11 @@
 import { generateText } from "ai"
+import { google } from "@ai-sdk/google"
 
 export async function POST(req: Request) {
   const { purpose, keyPoints, recipientType, studentName } = await req.json()
 
   const { text } = await generateText({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     prompt: `Write a professional email for a student in the placement process.
 
 Student Name: ${studentName || "Student"}

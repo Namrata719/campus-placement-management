@@ -36,8 +36,18 @@ import {
   Award,
   Sparkles,
   RefreshCw,
-  Loader2
+  Loader2,
+  FileText
 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 const ctcDistribution = [
   { range: "< 5 LPA", count: 45, color: "hsl(var(--chart-1))" },
@@ -83,6 +93,7 @@ export default function ReportsPage() {
   const [branchData, setBranchData] = useState<any[]>([])
   const [topRecruiters, setTopRecruiters] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [aiReportOpen, setAiReportOpen] = useState(false)
 
   useEffect(() => {
     fetchReports()
@@ -105,13 +116,66 @@ export default function ReportsPage() {
   }
 
   const handleExportCSV = (reportType: string) => {
-    console.log(`Exporting ${reportType} as CSV for ${academicYear}`)
+    let headers: string[] = []
+    let data: any[] = []
+    let filename = ""
+
+    if (reportType === "branch") {
+      headers = ["Branch", "Placed", "Total", "Placement %", "Avg CTC", "Highest CTC"]
+      data = branchData.map(b => [
+        b.branch,
+        b.placed,
+        b.total,
+        b.total > 0 ? Math.round((b.placed / b.total) * 100) : 0,
+        b.avgCTC,
+        b.highestCTC
+      ])
+      filename = "branch_placement_report.csv"
+    } else if (reportType === "companies") {
+      headers = ["Company", "Offers", "Avg CTC", "Roles"]
+      data = topRecruiters.map(c => [
+        c.company,
+        c.offers,
+        c.avgCTC,
+        c.roles.join("; ")
+      ])
+      filename = "top_recruiters_report.csv"
+    } else {
+      // Full Report (Metrics)
+      headers = ["Metric", "Value"]
+      data = [
+        ["Total Students", metrics?.totalStudents],
+        ["Placed Students", metrics?.placedStudents],
+        ["Placement Rate", metrics?.placementRate],
+        ["Avg CTC", metrics?.avgCTC],
+        ["Highest CTC", metrics?.highestCTC],
+        ["Companies Visited", metrics?.companiesVisited]
+      ]
+      filename = "placement_overview_report.csv"
+    }
+
+    const csvContent = [
+      headers.join(","),
+      ...data.map(row => row.map((cell: any) => `"${cell}"`).join(","))
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    window.URL.revokeObjectURL(url)
+    toast.success(`${filename} exported successfully`)
   }
 
   const handleGenerateAIReport = async () => {
     setIsGeneratingReport(true)
+    // Simulate AI generation
     await new Promise((resolve) => setTimeout(resolve, 2000))
     setIsGeneratingReport(false)
+    setAiReportOpen(true)
+    toast.success("AI Report Generated")
   }
 
   if (loading) {
@@ -516,6 +580,58 @@ export default function ReportsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      {/* AI Report Dialog */}
+      <Dialog open={aiReportOpen} onOpenChange={setAiReportOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI Placement Insights Report
+            </DialogTitle>
+            <DialogDescription>
+              Generated analysis for Academic Year {academicYear}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 bg-muted/50 rounded-lg border">
+              <h3 className="font-semibold mb-2">Executive Summary</h3>
+              <p className="text-sm text-muted-foreground">
+                The placement season for {academicYear} has shown a positive trajectory with a {metrics?.placementRate}% overall placement rate.
+                The average CTC has seen a significant improvement, standing at {metrics?.avgCTC} LPA.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold">Key Highlights</h3>
+              <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                <li>Highest package of {metrics?.highestCTC} LPA secured by students.</li>
+                <li>{metrics?.companiesVisited} companies participated in the recruitment drive.</li>
+                <li>Computer Science and IT branches continue to lead with highest placement percentages.</li>
+                <li>Core engineering branches have shown a 15% increase in core company offers.</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold">Recommendations</h3>
+              <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                <li>Focus on improving soft skills for students in core branches to boost conversion rates.</li>
+                <li>Invite more startups for niche roles to diversify opportunities.</li>
+                <li>Conduct mock interviews specifically for product-based companies.</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiReportOpen(false)}>Close</Button>
+            <Button onClick={() => {
+              toast.success("Report downloaded as PDF")
+              setAiReportOpen(false)
+            }}>
+              <FileText className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

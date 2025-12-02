@@ -1,5 +1,6 @@
 import { generateObject } from "ai"
 import { z } from "zod"
+import { google } from "@ai-sdk/google"
 
 const jobRecommendationSchema = z.object({
   recommendations: z.array(
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   const { studentProfile, availableJobs } = await req.json()
 
   const { object } = await generateObject({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     schema: jobRecommendationSchema,
     prompt: `Based on the student's profile and preferences, recommend the most suitable jobs with explanations.
 

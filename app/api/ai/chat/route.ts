@@ -1,4 +1,5 @@
 import { convertToModelMessages, streamText, type UIMessage } from "ai"
+import { google } from "@ai-sdk/google"
 
 export const maxDuration = 30
 
@@ -19,7 +20,7 @@ Be helpful, encouraging, and provide practical, actionable advice. When asked ab
   const prompt = convertToModelMessages(messages)
 
   const result = streamText({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     system: systemPrompt,
     prompt,
     maxOutputTokens: 2000,

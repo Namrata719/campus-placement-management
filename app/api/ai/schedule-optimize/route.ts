@@ -1,5 +1,6 @@
 import { generateObject } from "ai"
 import { z } from "zod"
+import { google } from "@ai-sdk/google"
 
 const scheduleSchema = z.object({
   optimizedSchedule: z.array(
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
   const { events, constraints, examSchedule } = await req.json()
 
   const { object } = await generateObject({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     schema: scheduleSchema,
     prompt: `Optimize this placement event schedule to minimize conflicts and student fatigue.
 

@@ -1,5 +1,6 @@
 import { generateObject } from "ai"
 import { z } from "zod"
+import { google } from "@ai-sdk/google"
 
 const skillGapSchema = z.object({
   currentSkillLevel: z.object({
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
   const { studentProfile, targetRoles } = await req.json()
 
   const { object } = await generateObject({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     schema: skillGapSchema,
     prompt: `Analyze the skill gap for this student aiming for specific roles.
 

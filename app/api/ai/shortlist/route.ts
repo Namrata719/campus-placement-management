@@ -1,5 +1,6 @@
 import { generateObject } from "ai"
 import { z } from "zod"
+import { google } from "@ai-sdk/google"
 
 const shortlistSchema = z.object({
   rankedCandidates: z.array(
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   const { jobDescription, eligibilityCriteria, candidates } = await req.json()
 
   const { object } = await generateObject({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     schema: shortlistSchema,
     prompt: `Analyze and rank these candidates for the job position.
 

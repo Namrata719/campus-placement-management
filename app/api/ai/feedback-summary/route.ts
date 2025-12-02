@@ -1,5 +1,6 @@
 import { generateObject } from "ai"
 import { z } from "zod"
+import { google } from "@ai-sdk/google"
 
 const feedbackSummarySchema = z.object({
   candidateName: z.string(),
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
   const { candidateName, interviewRound, feedbackText } = await req.json()
 
   const { object } = await generateObject({
-    model: "google/gemini-2.5-flash",
+    model: google("gemini-1.5-flash"),
     schema: feedbackSummarySchema,
     prompt: `Summarize this interview feedback for ${candidateName}.
 
