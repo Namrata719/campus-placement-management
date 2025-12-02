@@ -59,7 +59,7 @@ export default function StudentDashboard() {
     return <div className="flex items-center justify-center h-screen">Failed to load dashboard data</div>
   }
 
-  const { profile, stats, recommendedJobs, upcomingEvents, recentNotifications } = data
+  const { profile = {}, stats = {}, recommendedJobs = [], upcomingEvents = [], recentNotifications = [] } = data || {}
 
   return (
     <div className="space-y-6">
@@ -67,7 +67,7 @@ export default function StudentDashboard() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {greeting}, {profile.name.split(" ")[0]}!
+            {greeting}, {profile?.name?.split(" ")[0] || "Student"}!
           </h1>
           <p className="text-muted-foreground">Here&apos;s your placement dashboard overview</p>
         </div>
@@ -76,9 +76,11 @@ export default function StudentDashboard() {
             <Link href="/student/notifications">
               <Bell className="mr-2 h-4 w-4" />
               Notifications
-              <Badge variant="destructive" className="ml-2">
-                {recentNotifications.length}
-              </Badge>
+              {recentNotifications?.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {recentNotifications.length}
+                </Badge>
+              )}
             </Link>
           </Button>
           <Button asChild>
@@ -98,30 +100,27 @@ export default function StudentDashboard() {
               <Avatar className="h-16 w-16 border-2 border-primary">
                 <AvatarImage src="/student-avatar.png" />
                 <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                  {profile.name
-                    .split(" ")
-                    .map((n: string) => n[0])
-                    .join("")}
+                  {profile?.name?.split(" ").map((n: string) => n[0]).join("") || "ST"}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-lg">{profile.name}</h3>
+                <h3 className="font-semibold text-lg">{profile?.name || "Student"}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {profile.branch} • Batch {profile.batch}
+                  {profile?.branch || "N/A"} • Batch {profile?.batch || "N/A"}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <GraduationCap className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">CGPA: {profile.cgpa}</span>
+                  <span className="text-sm font-medium">CGPA: {profile?.cgpa || "N/A"}</span>
                 </div>
               </div>
             </div>
             <div className="flex flex-col gap-2 min-w-[200px]">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Profile Completion</span>
-                <span className="font-medium">{profile.profileCompletion}%</span>
+                <span className="font-medium">{profile?.profileCompletion || 0}%</span>
               </div>
-              <Progress value={profile.profileCompletion} className="h-2" />
-              {profile.profileCompletion < 100 && (
+              <Progress value={profile?.profileCompletion || 0} className="h-2" />
+              {(profile?.profileCompletion || 0) < 100 && (
                 <Button variant="link" className="p-0 h-auto text-xs justify-start" asChild>
                   <Link href="/student/profile">Complete your profile to improve visibility</Link>
                 </Button>
@@ -139,7 +138,7 @@ export default function StudentDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.applied}</div>
+            <div className="text-2xl font-bold">{stats?.applied || 0}</div>
             <p className="text-xs text-muted-foreground">Jobs applied to</p>
           </CardContent>
         </Card>
@@ -149,7 +148,7 @@ export default function StudentDashboard() {
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{stats.shortlisted}</div>
+            <div className="text-2xl font-bold text-emerald-600">{stats?.shortlisted || 0}</div>
             <p className="text-xs text-muted-foreground">Awaiting next round</p>
           </CardContent>
         </Card>
@@ -159,7 +158,7 @@ export default function StudentDashboard() {
             <Clock className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats.interviews}</div>
+            <div className="text-2xl font-bold text-amber-600">{stats?.interviews || 0}</div>
             <p className="text-xs text-muted-foreground">Scheduled this week</p>
           </CardContent>
         </Card>
@@ -169,7 +168,7 @@ export default function StudentDashboard() {
             <Star className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.offers}</div>
+            <div className="text-2xl font-bold text-primary">{stats?.offers || 0}</div>
             <p className="text-xs text-muted-foreground">Congratulations!</p>
           </CardContent>
         </Card>

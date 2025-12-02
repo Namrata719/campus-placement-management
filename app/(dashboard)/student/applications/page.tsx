@@ -288,7 +288,13 @@ export default function StudentApplicationsPage() {
                               <h4 className="font-semibold mb-4">Application Timeline</h4>
                               <div className="space-y-4">
                                 {application.statusHistory.map((history, index) => {
-                                  const historyStatus = statusConfig[history.status]
+                                  // History from API uses 'to' field (StatusChangeSchema), not 'status'
+                                  const statusKey = (history as any).to || history.status || 'applied'
+                                  const historyStatus = statusConfig[statusKey] || {
+                                    label: statusKey.charAt(0).toUpperCase() + statusKey.slice(1).replace(/_/g, ' '),
+                                    color: "bg-muted text-muted-foreground",
+                                    icon: Clock
+                                  }
                                   return (
                                     <div key={index} className="flex gap-4">
                                       <div className="flex flex-col items-center">
@@ -303,9 +309,9 @@ export default function StudentApplicationsPage() {
                                       </div>
                                       <div className="pb-4">
                                         <p className="font-medium">{historyStatus.label}</p>
-                                        <p className="text-sm text-muted-foreground">{history.note || history.comment}</p>
+                                        <p className="text-sm text-muted-foreground">{(history as any).remarks || history.note || history.comment || 'Status updated'}</p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                          {new Date(history.date).toLocaleDateString("en-US", {
+                                          {new Date((history as any).changedAt || history.date).toLocaleDateString("en-US", {
                                             day: "numeric",
                                             month: "short",
                                             year: "numeric",

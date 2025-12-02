@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
             },
             status: app.status,
             appliedAt: app.appliedAt,
-            statusHistory: app.timeline || [],
+            statusHistory: app.statusHistory || [],
             nextStep: getNextStep(app.status),
             offer: app.offer,
         }))
@@ -79,18 +79,21 @@ export async function POST(req: NextRequest) {
         }
 
         const { jobId } = await req.json()
+        console.log(`[Apply] Attempting to apply. UserId: ${userId}, JobId: ${jobId}`)
 
         await connectDB()
 
         // Get student record
         const student = await Student.findOne({ userId })
         if (!student) {
+            console.log(`[Apply] Student not found for userId: ${userId}`)
             return NextResponse.json({ error: "Student not found" }, { status: 404 })
         }
 
         // Get job details
         const job = await Job.findById(jobId)
         if (!job) {
+            console.log(`[Apply] Job not found for jobId: ${jobId}`)
             return NextResponse.json({ error: "Job not found" }, { status: 404 })
         }
 
@@ -104,18 +107,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Already applied to this job" }, { status: 400 })
         }
 
+        // Check for resume
+        const resumeId = student.activeResumeId || student.resumes?.[0]?._id
+        if (!resumeId) {
+            return NextResponse.json({ error: "Please upload a resume before applying" }, { status: 400 })
+        }
+
         // Create application
         const application = await Application.create({
             jobId,
             studentId: student._id,
             companyId: job.companyId,
+            resumeId: resumeId,
             status: "applied",
             appliedAt: new Date(),
-            timeline: [
+            statusHistory: [
                 {
-                    status: "applied",
-                    date: new Date(),
-                    comment: "Application submitted",
+                    from: "none",
+                    to: "applied",
+                    changedBy: "student",
+                    remarks: "Application submitted",
                 },
             ],
         })
@@ -162,10 +173,11 @@ export async function PUT(req: NextRequest) {
 
         if (action === "withdraw") {
             application.status = "withdrawn"
-            application.timeline.push({
-                status: "withdrawn",
-                date: new Date(),
-                comment: "Application withdrawn by student",
+            application.statusHistory.push({
+                from: "applied", // Assuming previous status was applied, strictly we should use application.status
+                to: "withdrawn",
+                changedBy: "student",
+                remarks: "Application withdrawn by student",
             })
             await application.save()
 
@@ -181,10 +193,11 @@ export async function PUT(req: NextRequest) {
             }
 
             application.status = "accepted"
-            application.timeline.push({
-                status: "accepted",
-                date: new Date(),
-                comment: "Offer accepted by student",
+            application.statusHistory.push({
+                from: "offered",
+                to: "accepted",
+                changedBy: "student",
+                remarks: "Offer accepted by student",
             })
 
             // Update student placement status
@@ -206,10 +219,11 @@ export async function PUT(req: NextRequest) {
             }
 
             application.status = "declined"
-            application.timeline.push({
-                status: "declined",
-                date: new Date(),
-                comment: "Offer declined by student",
+            application.statusHistory.push({
+                from: "offered",
+                to: "declined",
+                changedBy: "student",
+                remarks: "Offer declined by student",
             })
 
             await application.save()

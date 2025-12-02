@@ -105,6 +105,16 @@ export default function StudentJobsPage() {
 
   const handleApply = async () => {
     if (!selectedJob) return
+
+    // Check eligibility first with detailed messages
+    if (!selectedJob.isEligible) {
+      toast.error("You are not eligible for this job", {
+        description: selectedJob.eligibilityReason,
+        duration: 5000,
+      })
+      return
+    }
+
     setIsApplying(true)
     try {
       const res = await fetch("/api/student/applications", {
@@ -113,14 +123,42 @@ export default function StudentJobsPage() {
         body: JSON.stringify({ jobId: selectedJob.id }),
       })
       const data = await res.json()
+
       if (data.success) {
-        toast.success("Applied successfully!")
+        toast.success("Application submitted successfully!", {
+          description: "You can track your application status in the Applications page.",
+          duration: 5000,
+        })
         setIsDetailsOpen(false)
+        // Optionally refresh the jobs list to update application status
       } else {
-        toast.error(data.error || "Failed to apply")
+        // Show specific error messages
+        if (data.error.includes("resume")) {
+          toast.error("Resume Required", {
+            description: "Please upload your resume before applying to jobs.",
+            action: {
+              label: "Upload Resume",
+              onClick: () => window.location.href = "/student/resume",
+            },
+            duration: 7000,
+          })
+        } else if (data.error.includes("already applied")) {
+          toast.warning("Already Applied", {
+            description: "You have already applied to this job. Check your applications page for status.",
+            action: {
+              label: "View Applications",
+              onClick: () => window.location.href = "/student/applications",
+            },
+            duration: 7000,
+          })
+        } else {
+          toast.error(data.error || "Failed to apply")
+        }
       }
     } catch (error) {
-      toast.error("Failed to apply")
+      toast.error("Failed to apply", {
+        description: "An unexpected error occurred. Please try again later.",
+      })
     } finally {
       setIsApplying(false)
     }
