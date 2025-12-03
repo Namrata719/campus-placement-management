@@ -12,31 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sparkles, FileText, MessageSquare, RefreshCw, Copy, CheckCircle, Brain, Lightbulb } from "lucide-react"
 import { toast } from "sonner"
 
-const QUESTION_BANK = [
-  { q: "Explain the difference between let, const, and var in JavaScript.", difficulty: "easy", topic: "javascript", role: "sde" },
-  { q: "How would you implement a debounce function from scratch?", difficulty: "medium", topic: "javascript", role: "sde" },
-  { q: "Explain the Virtual DOM in React and how it improves performance.", difficulty: "medium", topic: "react", role: "frontend" },
-  { q: "Given an array of integers, find two numbers that add up to a target sum.", difficulty: "medium", topic: "dsa", role: "sde" },
-  { q: "What is the time complexity of your solution and can you optimize it?", difficulty: "medium", topic: "dsa", role: "sde" },
-  { q: "Explain React hooks and when you would use useCallback vs useMemo.", difficulty: "medium", topic: "react", role: "frontend" },
-  { q: "Design a URL shortening service. What would be your approach?", difficulty: "hard", topic: "system design", role: "sde" },
-  { q: "How do you handle state management in large React applications?", difficulty: "medium", topic: "react", role: "frontend" },
-  { q: "Implement a function to reverse a linked list.", difficulty: "medium", topic: "dsa", role: "sde" },
-  { q: "Explain closures in JavaScript with a practical example.", difficulty: "medium", topic: "javascript", role: "sde" },
-  { q: "What is the difference between SQL and NoSQL databases?", difficulty: "easy", topic: "database", role: "data" },
-  { q: "Explain the concept of normalization in databases.", difficulty: "medium", topic: "database", role: "data" },
-  { q: "How do you handle missing data in a dataset?", difficulty: "medium", topic: "data analysis", role: "data" },
-  { q: "What is overfitting and how can you prevent it?", difficulty: "medium", topic: "machine learning", role: "data" },
-  { q: "Describe a challenging project you worked on and how you overcame obstacles.", difficulty: "medium", topic: "behavioral", role: "all" },
-  { q: "Where do you see yourself in 5 years?", difficulty: "easy", topic: "behavioral", role: "all" },
-  { q: "Tell me about a time you had a conflict with a team member.", difficulty: "medium", topic: "behavioral", role: "all" },
-]
-
 export default function CompanyAIToolsPage() {
   const [isGeneratingJD, setIsGeneratingJD] = useState(false)
   const [jdGenerated, setJdGenerated] = useState(false)
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
   const [questionsGenerated, setQuestionsGenerated] = useState(false)
+  const [isSummarizingFeedback, setIsSummarizingFeedback] = useState(false)
+  const [feedbackSummary, setFeedbackSummary] = useState<any>(null)
 
   // JD State
   const [jdTitle, setJdTitle] = useState("")
@@ -53,70 +35,112 @@ export default function CompanyAIToolsPage() {
   const [qCount, setQCount] = useState("5")
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([])
 
-  const generateJD = () => {
+  // Feedback State
+  const [candidateName, setCandidateName] = useState("")
+  const [interviewRound, setInterviewRound] = useState("Technical Round 1")
+  const [feedbackText, setFeedbackText] = useState("")
+
+  const generateJD = async () => {
     if (!jdTitle || !jdSkills) {
       toast.error("Please fill in Job Title and Skills")
       return
     }
 
     setIsGeneratingJD(true)
-    setTimeout(() => {
-      const jd = {
-        title: jdTitle,
-        type: jdType === "fulltime" ? "Full-time" : "Internship",
-        location: "Bangalore", // Mock location
-        about: `We are seeking a talented ${jdTitle} to join our engineering team. You will work on challenging problems and have the opportunity to make a significant impact.`,
-        responsibilities: [
-          `Design and develop scalable applications using ${jdSkills.split(",")[0] || "modern technologies"}`,
-          "Write clean, efficient, and well-documented code",
-          "Collaborate with cross-functional teams",
-          "Participate in code reviews"
-        ],
-        requirements: [
-          "Bachelor's degree in Computer Science or related field",
-          `Strong proficiency in ${jdSkills}`,
-          "Strong problem-solving skills",
-          "Excellent communication abilities"
-        ],
-        niceToHave: [
-          "Experience with cloud platforms",
-          "Knowledge of CI/CD pipelines"
-        ]
-      }
-
-      if (jdDesc) {
-        jd.about += ` ${jdDesc}`
-      }
-
-      setGeneratedJD(jd)
-      setIsGeneratingJD(false)
-      setJdGenerated(true)
-      toast.success("JD Generated successfully")
-    }, 1500)
-  }
-
-  const generateQuestions = () => {
-    setIsGeneratingQuestions(true)
-    setTimeout(() => {
-      let filtered = QUESTION_BANK.filter(q => {
-        if (q.role !== "all" && q.role !== qRole) return false
-        if (qType !== "mixed" && qType === "behavioral" && q.topic !== "behavioral") return false
-        if (qType !== "mixed" && qType === "technical" && q.topic === "behavioral") return false
-        if (qDiff !== "mixed" && q.difficulty !== qDiff) return false
-        return true
+    try {
+      const response = await fetch("/api/ai/generate-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: jdTitle,
+          type: jdType === "fulltime" ? "Full-time" : "Internship",
+          experience: jdExp,
+          skills: jdSkills,
+          description: jdDesc,
+        }),
       })
 
-      // If not enough questions, relax filters
-      if (filtered.length < parseInt(qCount)) {
-        filtered = QUESTION_BANK.filter(q => q.role === qRole || q.role === "all")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to generate JD")
       }
 
-      const selected = filtered.slice(0, parseInt(qCount))
-      setGeneratedQuestions(selected)
-      setIsGeneratingQuestions(false)
+      const data = await response.json()
+      setGeneratedJD(data)
+      setJdGenerated(true)
+      toast.success("JD Generated successfully")
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || "Failed to generate JD")
+    } finally {
+      setIsGeneratingJD(false)
+    }
+  }
+
+  const generateQuestions = async () => {
+    setIsGeneratingQuestions(true)
+    try {
+      const response = await fetch("/api/ai/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: qRole,
+          skills: "Relevant skills for the role", // You might want to add a skills input for questions too
+          questionType: qType,
+          difficulty: qDiff,
+          count: parseInt(qCount),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to generate questions")
+      }
+
+      const data = await response.json()
+      setGeneratedQuestions(data.questions)
       setQuestionsGenerated(true)
       toast.success("Questions generated successfully")
-    }, 1500)
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || "Failed to generate questions")
+    } finally {
+      setIsGeneratingQuestions(false)
+    }
+  }
+
+  const summarizeFeedback = async () => {
+    if (!candidateName || !feedbackText) {
+      toast.error("Please fill in Candidate Name and Feedback")
+      return
+    }
+
+    setIsSummarizingFeedback(true)
+    try {
+      const response = await fetch("/api/ai/feedback-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidateName,
+          interviewRound,
+          feedbackText,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to summarize feedback")
+      }
+
+      const data = await response.json()
+      setFeedbackSummary(data)
+      toast.success("Feedback summarized successfully")
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || "Failed to summarize feedback")
+    } finally {
+      setIsSummarizingFeedback(false)
+    }
   }
 
   return (
@@ -352,7 +376,7 @@ export default function CompanyAIToolsPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle>Generated Questions</CardTitle>
                     <Button variant="outline" size="sm" onClick={() => {
-                      const text = generatedQuestions.map((q, i) => `${i + 1}. ${q.q}`).join("\n")
+                      const text = generatedQuestions.map((q, i) => `${i + 1}. ${q.question}`).join("\n")
                       navigator.clipboard.writeText(text)
                       toast.success("Copied to clipboard")
                     }}>
@@ -388,7 +412,7 @@ export default function CompanyAIToolsPage() {
                               </Badge>
                             </div>
                           </div>
-                          <p className="text-sm">{item.q}</p>
+                          <p className="text-sm">{item.question}</p>
                         </div>
                       ))
                     )}
@@ -400,23 +424,102 @@ export default function CompanyAIToolsPage() {
         </TabsContent>
 
         <TabsContent value="feedback" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Interview Feedback Summarizer
-              </CardTitle>
-              <CardDescription>
-                Paste interviewer feedback to get AI-generated summaries and recommendations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-10 text-center text-muted-foreground">
-                <p>Feedback summarization requires an active AI service connection.</p>
-                <p className="text-sm mt-2">Please contact administrator to enable this feature.</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Interview Feedback Summarizer
+                </CardTitle>
+                <CardDescription>
+                  Paste interviewer feedback to get AI-generated summaries and recommendations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Candidate Name</Label>
+                  <Input
+                    placeholder="e.g., John Doe"
+                    value={candidateName}
+                    onChange={(e) => setCandidateName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Interview Round</Label>
+                  <Select value={interviewRound} onValueChange={setInterviewRound}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Technical Round 1">Technical Round 1</SelectItem>
+                      <SelectItem value="Technical Round 2">Technical Round 2</SelectItem>
+                      <SelectItem value="HR Round">HR Round</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Raw Feedback</Label>
+                  <Textarea
+                    placeholder="Paste the raw feedback notes here..."
+                    rows={6}
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                  />
+                </div>
+                <Button onClick={summarizeFeedback} disabled={isSummarizingFeedback} className="w-full">
+                  {isSummarizingFeedback ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Summarizing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Summarize Feedback
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {feedbackSummary && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Feedback Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-1">Summary</h4>
+                    <p className="text-sm text-muted-foreground">{feedbackSummary.summary}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Strengths</h4>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                      {feedbackSummary.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Areas for Improvement</h4>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                      {feedbackSummary.areasForImprovement?.map((w: string, i: number) => <li key={i}>{w}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Recommendation</h4>
+                    <Badge variant={
+                      feedbackSummary.recommendation === "strong_hire" || feedbackSummary.recommendation === "hire"
+                        ? "default"
+                        : feedbackSummary.recommendation === "no_hire"
+                          ? "destructive"
+                          : "secondary"
+                    }>
+                      {feedbackSummary.recommendation?.replace("_", " ").toUpperCase()}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

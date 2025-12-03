@@ -4,6 +4,10 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "sonner"
 import {
   Sparkles,
   Brain,
@@ -18,43 +22,46 @@ import {
 
 export default function SkillAnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [analysisComplete, setAnalysisComplete] = useState(true)
+  const [analysisComplete, setAnalysisComplete] = useState(false)
+  const [targetRoles, setTargetRoles] = useState("")
+  const [skills, setSkills] = useState("")
+  const [skillAnalysis, setSkillAnalysis] = useState<any>(null)
 
-  const skillAnalysis = {
-    overallReadiness: 72,
-    currentSkills: {
-      strong: ["JavaScript", "React", "HTML/CSS", "Git"],
-      moderate: ["Node.js", "SQL", "Python"],
-      weak: ["System Design", "AWS", "Docker"],
-    },
-    gapAnalysis: [
-      {
-        skill: "System Design",
-        importance: "critical",
-        currentLevel: "basic",
-        requiredLevel: "intermediate",
-        learningPath: ["Learn design patterns", "Study scalability concepts", "Practice designing real systems"],
-      },
-      {
-        skill: "Data Structures & Algorithms",
-        importance: "critical",
-        currentLevel: "intermediate",
-        requiredLevel: "advanced",
-        learningPath: ["Practice medium/hard LeetCode", "Focus on dynamic programming", "Study graph algorithms"],
-      },
-      {
-        skill: "AWS/Cloud",
-        importance: "important",
-        currentLevel: "none",
-        requiredLevel: "basic",
-        learningPath: ["Start with AWS fundamentals", "Learn EC2, S3, Lambda", "Get AWS Cloud Practitioner cert"],
-      },
-    ],
-    recommendations: [
-      { topic: "Advanced DSA", reason: "Critical for clearing technical interviews", time: "4-6 weeks" },
-      { topic: "System Design Basics", reason: "Required for SDE roles at product companies", time: "3-4 weeks" },
-      { topic: "AWS Fundamentals", reason: "Increasingly asked in interviews", time: "2-3 weeks" },
-    ],
+  const handleAnalyze = async () => {
+    if (!targetRoles || !skills) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
+    setIsAnalyzing(true)
+    try {
+      const response = await fetch("/api/ai/skill-gap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          studentProfile: {
+            skills: skills.split(",").map(s => s.trim()),
+          },
+          targetRoles: targetRoles.split(",").map(s => s.trim()),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to analyze skills")
+      }
+
+      const data = await response.json()
+      setSkillAnalysis(data)
+      setAnalysisComplete(true)
+      toast.success("Analysis complete!")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to analyze skills. Please try again.")
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   return (
@@ -64,23 +71,55 @@ export default function SkillAnalysisPage() {
           <h1 className="text-3xl font-bold">AI Skill Analysis</h1>
           <p className="text-muted-foreground">Identify skill gaps and get personalized learning recommendations</p>
         </div>
-        <Button onClick={() => setIsAnalyzing(true)} disabled={isAnalyzing}>
-          {isAnalyzing ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Re-analyze Skills
-            </>
-          )}
-        </Button>
       </div>
 
-      {analysisComplete && (
+      {!analysisComplete ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Start New Analysis</CardTitle>
+            <CardDescription>Enter your target roles and current skills to get started</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="target-roles">Target Roles (comma separated)</Label>
+              <Input
+                id="target-roles"
+                placeholder="e.g. Software Engineer, Frontend Developer, Data Scientist"
+                value={targetRoles}
+                onChange={(e) => setTargetRoles(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="skills">Current Skills (comma separated)</Label>
+              <Textarea
+                id="skills"
+                placeholder="e.g. JavaScript, React, Python, SQL, Git"
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full">
+              {isAnalyzing ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Analyze Skills
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
         <>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setAnalysisComplete(false)}>
+              Start New Analysis
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-6">
@@ -125,7 +164,7 @@ export default function SkillAnalysisPage() {
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{skillAnalysis.currentSkills.strong.length}</p>
+                    <p className="text-2xl font-bold">{skillAnalysis.currentSkillLevel.strong.length}</p>
                     <p className="text-sm text-muted-foreground">Strong Skills</p>
                   </div>
                 </div>
@@ -138,7 +177,7 @@ export default function SkillAnalysisPage() {
                     <AlertCircle className="h-5 w-5 text-yellow-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{skillAnalysis.currentSkills.moderate.length}</p>
+                    <p className="text-2xl font-bold">{skillAnalysis.currentSkillLevel.moderate.length}</p>
                     <p className="text-sm text-muted-foreground">Moderate Skills</p>
                   </div>
                 </div>
@@ -174,7 +213,7 @@ export default function SkillAnalysisPage() {
                     <span className="font-medium">Strong Skills</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {skillAnalysis.currentSkills.strong.map((skill) => (
+                    {skillAnalysis.currentSkillLevel.strong.map((skill: string) => (
                       <Badge key={skill} className="bg-green-500/10 text-green-600 border-green-500/30">
                         {skill}
                       </Badge>
@@ -188,7 +227,7 @@ export default function SkillAnalysisPage() {
                     <span className="font-medium">Moderate Skills</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {skillAnalysis.currentSkills.moderate.map((skill) => (
+                    {skillAnalysis.currentSkillLevel.moderate.map((skill: string) => (
                       <Badge key={skill} className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
                         {skill}
                       </Badge>
@@ -202,7 +241,7 @@ export default function SkillAnalysisPage() {
                     <span className="font-medium">Needs Improvement</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {skillAnalysis.currentSkills.weak.map((skill) => (
+                    {skillAnalysis.currentSkillLevel.weak.map((skill: string) => (
                       <Badge key={skill} className="bg-red-500/10 text-red-600 border-red-500/30">
                         {skill}
                       </Badge>
@@ -220,11 +259,11 @@ export default function SkillAnalysisPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {skillAnalysis.recommendations.map((rec, index) => (
+                {skillAnalysis.recommendedCourses.map((rec: any, index: number) => (
                   <div key={index} className="p-4 rounded-lg border">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium">{rec.topic}</h4>
-                      <Badge variant="outline">{rec.time}</Badge>
+                      <Badge variant="outline">{rec.estimatedTime}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{rec.reason}</p>
                   </div>
@@ -243,7 +282,7 @@ export default function SkillAnalysisPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {skillAnalysis.gapAnalysis.map((gap, index) => (
+                {skillAnalysis.gapAnalysis.map((gap: any, index: number) => (
                   <div key={index} className="p-4 rounded-lg border">
                     <div className="flex items-start justify-between mb-4">
                       <div>
@@ -272,7 +311,7 @@ export default function SkillAnalysisPage() {
                         Learning Path
                       </p>
                       <ol className="list-decimal list-inside space-y-1">
-                        {gap.learningPath.map((step, i) => (
+                        {gap.learningPath.map((step: string, i: number) => (
                           <li key={i} className="text-sm text-muted-foreground">
                             {step}
                           </li>
@@ -289,3 +328,4 @@ export default function SkillAnalysisPage() {
     </div>
   )
 }
+

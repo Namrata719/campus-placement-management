@@ -1,54 +1,55 @@
-import { generateObject } from "ai"
-import { z } from "zod"
-import { google } from "@ai-sdk/google"
-
-const skillGapSchema = z.object({
-  currentSkillLevel: z.object({
-    strong: z.array(z.string()),
-    moderate: z.array(z.string()),
-    weak: z.array(z.string()),
-  }),
-  gapAnalysis: z.array(
-    z.object({
-      skill: z.string(),
-      importance: z.enum(["critical", "important", "nice_to_have"]),
-      currentLevel: z.enum(["none", "basic", "intermediate", "advanced"]),
-      requiredLevel: z.enum(["basic", "intermediate", "advanced"]),
-      learningPath: z.array(z.string()),
-    }),
-  ),
-  recommendedCourses: z.array(
-    z.object({
-      topic: z.string(),
-      reason: z.string(),
-      estimatedTime: z.string(),
-    }),
-  ),
-  overallReadiness: z.number().min(0).max(100),
-  summary: z.string(),
-})
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(req: Request) {
   const { studentProfile, targetRoles } = await req.json()
 
-  const { object } = await generateObject({
-    model: google("gemini-1.5-flash"),
-    schema: skillGapSchema,
-    prompt: `Analyze the skill gap for this student aiming for specific roles.
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  })
+
+  const prompt = `Analyze the skill gap for this student aiming for specific roles.
 
 Student Profile:
 ${JSON.stringify(studentProfile, null, 2)}
 
 Target Roles: ${targetRoles.join(", ")}
 
-Provide:
-1. Assessment of current skill levels
-2. Gap analysis for each missing/weak skill
-3. Recommended learning topics
-4. Overall readiness percentage
-5. Summary with actionable advice`,
-    maxOutputTokens: 3000,
-  })
+Provide a JSON object with the following structure:
+{
+  "currentSkillLevel": {
+    "strong": ["skill1", "skill2"],
+    "moderate": ["skill3"],
+    "weak": ["skill4"]
+  },
+  "gapAnalysis": [
+    {
+      "skill": "skill_name",
+      "importance": "critical" | "important" | "nice_to_have",
+      "currentLevel": "none" | "basic" | "intermediate" | "advanced",
+      "requiredLevel": "basic" | "intermediate" | "advanced",
+      "learningPath": ["step1", "step2"]
+    }
+  ],
+  "recommendedCourses": [
+    {
+      "topic": "topic_name",
+      "reason": "reason",
+      "estimatedTime": "time"
+    }
+  ],
+  "overallReadiness": number (0-100),
+  "summary": "summary text"
+}`
 
-  return Response.json(object)
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    return Response.json(JSON.parse(text))
+  } catch (error: any) {
+    console.error("Error generating skill gap analysis:", error)
+    return Response.json({ error: error.message || "Failed to generate analysis" }, { status: 500 })
+  }
 }

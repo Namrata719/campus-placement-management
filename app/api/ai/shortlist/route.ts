@@ -1,37 +1,15 @@
-import { generateObject } from "ai"
-import { z } from "zod"
-import { google } from "@ai-sdk/google"
-
-const shortlistSchema = z.object({
-  rankedCandidates: z.array(
-    z.object({
-      candidateId: z.string(),
-      name: z.string(),
-      rank: z.number(),
-      score: z.number(),
-      reasoning: z.string(),
-      strengths: z.array(z.string()),
-      concerns: z.array(z.string()),
-      recommendation: z.enum(["strong_yes", "yes", "maybe", "no"]),
-    }),
-  ),
-  borderlineCandidates: z.array(
-    z.object({
-      candidateId: z.string(),
-      name: z.string(),
-      reason: z.string(),
-    }),
-  ),
-  summary: z.string(),
-})
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(req: Request) {
   const { jobDescription, eligibilityCriteria, candidates } = await req.json()
 
-  const { object } = await generateObject({
-    model: google("gemini-1.5-flash"),
-    schema: shortlistSchema,
-    prompt: `Analyze and rank these candidates for the job position.
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  })
+
+  const prompt = `Analyze and rank these candidates for the job position.
 
 Job Description:
 ${jobDescription}
@@ -42,12 +20,37 @@ ${JSON.stringify(eligibilityCriteria, null, 2)}
 Candidates:
 ${JSON.stringify(candidates, null, 2)}
 
-Provide:
-1. Ranked list of top candidates with detailed reasoning
-2. Borderline candidates who may have lower CGPA but strong skills/projects
-3. Summary of the overall candidate pool quality`,
-    maxOutputTokens: 4000,
-  })
+Provide a JSON object with:
+{
+  "rankedCandidates": [
+    {
+      "candidateId": "id",
+      "name": "name",
+      "rank": number,
+      "score": number (0-100),
+      "reasoning": "reasoning text",
+      "strengths": ["list of strengths"],
+      "concerns": ["list of concerns"],
+      "recommendation": "strong_yes" | "yes" | "maybe" | "no"
+    }
+  ],
+  "borderlineCandidates": [
+    {
+      "candidateId": "id",
+      "name": "name",
+      "reason": "reason text"
+    }
+  ],
+  "summary": "summary text"
+}`
 
-  return Response.json(object)
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    return Response.json(JSON.parse(text))
+  } catch (error: any) {
+    console.error("Error shortlisting candidates:", error)
+    return Response.json({ error: error.message || "Failed to shortlist candidates" }, { status: 500 })
+  }
 }

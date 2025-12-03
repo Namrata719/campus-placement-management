@@ -1,24 +1,49 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Bell, Moon, Lock, Globe, Shield } from "lucide-react"
+import { Bell, Moon, Lock, Globe, Shield, Loader2 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 export default function SettingsPage() {
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
     const [notifications, setNotifications] = useState({
         email: true,
         push: true,
         marketing: false,
     })
-    const [theme, setTheme] = useState("light")
+    const [isSaving, setIsSaving] = useState(false)
+
+    // Avoid hydration mismatch
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const handleSave = () => {
-        toast.success("Settings saved successfully")
+        setIsSaving(true)
+        // Simulate API call
+        setTimeout(() => {
+            setIsSaving(false)
+            toast.success("Settings saved successfully")
+        }, 1000)
+    }
+
+    const handlePasswordChange = () => {
+        toast.info("Password reset email sent to your registered email address.")
+    }
+
+    const handleTwoFactor = () => {
+        toast.info("Two-factor authentication setup initiated.")
+    }
+
+    if (!mounted) {
+        return null
     }
 
     return (
@@ -89,13 +114,18 @@ export default function SettingsPage() {
                         <CardDescription>Manage your security settings.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Button variant="outline">Change Password</Button>
-                        <Button variant="outline" className="ml-2">Two-Factor Authentication</Button>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Button variant="outline" onClick={handlePasswordChange}>Change Password</Button>
+                            <Button variant="outline" onClick={handleTwoFactor}>Two-Factor Authentication</Button>
+                        </div>
                     </CardContent>
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button onClick={handleSave}>Save Changes</Button>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
                 </div>
             </div>
         </div>

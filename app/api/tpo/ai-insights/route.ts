@@ -4,10 +4,7 @@ import connectDB from "@/lib/mongodb"
 import { Application } from "@/lib/models/Application"
 import { Student } from "@/lib/models/Student"
 import { Job } from "@/lib/models/Job"
-import { Company } from "@/lib/models/Company"
-import { google } from "@ai-sdk/google"
-import { generateObject } from "ai"
-import { z } from "zod"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function GET(req: NextRequest) {
     try {
@@ -18,8 +15,11 @@ export async function GET(req: NextRequest) {
 
         await connectDB()
 
-        // Mock AI Insights Logic (since we don't have a real AI engine connected)
-        // In a real app, this would call an AI service or run complex aggregations
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            generationConfig: { responseMimeType: "application/json" }
+        })
 
         // 1. Anomaly Detection: High Rejection Rate
         const jobs = await Job.find({ status: "active" }).populate("companyId")
@@ -53,23 +53,20 @@ export async function GET(req: NextRequest) {
 
         if (highRejectionJob) {
             try {
-                const { object } = await generateObject({
-                    model: google("gemini-1.5-flash"),
-                    schema: z.object({
-                        description: z.string(),
-                        insights: z.array(z.string()),
-                        severity: z.enum(["warning", "critical", "good"])
-                    }),
-                    prompt: `Analyze this high rejection rate scenario:
+                const prompt = `Analyze this high rejection rate scenario:
                     Company: ${highRejectionJob.companyId.name}
                     Job: ${highRejectionJob.title}
                     Rejection Rate: ${rejectionRate.toFixed(1)}%
                     
-                    Provide:
-                    1. A professional description of the issue.
-                    2. 3 actionable insights/recommendations for the TPO to improve this.
-                    3. Severity level (warning or critical).`
-                })
+                    Provide a JSON object with:
+                    {
+                        "description": "A professional description of the issue.",
+                        "insights": ["3 actionable insights/recommendations for the TPO"],
+                        "severity": "warning" | "critical" | "good"
+                    }`
+
+                const result = await model.generateContent(prompt)
+                const object = JSON.parse(result.response.text())
 
                 anomalies.push({
                     type: "high_rejection",
@@ -80,7 +77,6 @@ export async function GET(req: NextRequest) {
                 })
             } catch (e: any) {
                 console.error("AI Anomaly Generation Failed:", e)
-                // Fallback with error indication
                 anomalies.push({
                     type: "high_rejection",
                     title: "AI Generation Failed",
@@ -98,20 +94,18 @@ export async function GET(req: NextRequest) {
         const currentRate = totalStudents > 0 ? (currentPlaced / totalStudents) * 100 : 75.5
 
         try {
-            const { object } = await generateObject({
-                model: google("gemini-1.5-flash"),
-                schema: z.object({
-                    description: z.string(),
-                    insights: z.array(z.string())
-                }),
-                prompt: `Analyze this placement trend:
+            const prompt = `Analyze this placement trend:
                 Current Placement Rate: ${currentRate.toFixed(1)}%
                 Context: This is a positive trend compared to last year.
                 
-                Provide:
-                1. A celebratory description.
-                2. 3 insights on why this might be happening (e.g., better training, more companies).`
-            })
+                Provide a JSON object with:
+                {
+                    "description": "A celebratory description.",
+                    "insights": ["3 insights on why this might be happening"]
+                }`
+
+            const result = await model.generateContent(prompt)
+            const object = JSON.parse(result.response.text())
 
             anomalies.push({
                 type: "positive_trend",
@@ -159,36 +153,45 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { type, data } = body
 
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    })
+
     if (type === "jd_review") {
         const jdText = data
 
         try {
-            const { object } = await generateObject({
-                model: google("gemini-1.5-flash"),
-                schema: z.object({
-                    score: z.number(),
-                    analysis: z.array(z.object({
-                        type: z.enum(["error", "warning", "good"]),
-                        title: z.string(),
-                        description: z.string()
-                    }))
-                }),
-                prompt: `Review this Job Description (JD) and provide a score (0-100) and analysis points.
+            const prompt = `Review this Job Description (JD) and provide a score (0-100) and analysis points.
                 JD Content: "${jdText}"
                 
                 Rules:
                 - Check for clarity, missing sections (salary, skills, roles), and bias.
                 - 'error' for critical missing info.
                 - 'warning' for vague info.
-                - 'good' for well-written parts.`
-            })
+                - 'good' for well-written parts.
+
+                Provide a JSON object with:
+                {
+                    "score": number,
+                    "analysis": [
+                        {
+                            "type": "error" | "warning" | "good",
+                            "title": "string",
+                            "description": "string"
+                        }
+                    ]
+                }`
+
+            const result = await model.generateContent(prompt)
+            const object = JSON.parse(result.response.text())
 
             return NextResponse.json({
                 success: true,
                 data: object
             })
         } catch (e) {
-            // Fallback
             return NextResponse.json({
                 success: true,
                 data: {
@@ -208,32 +211,30 @@ export async function POST(req: NextRequest) {
             const placedStudents = await Student.countDocuments({ placementStatus: "placed" })
             const placementRate = totalStudents > 0 ? ((placedStudents / totalStudents) * 100).toFixed(1) : 0
 
-            const { object } = await generateObject({
-                model: google("gemini-1.5-flash"),
-                schema: z.object({
-                    summary: z.string(),
-                    highlights: z.array(z.string()),
-                    recommendations: z.array(z.string())
-                }),
-                prompt: `Generate a placement report summary for the year ${year}.
+            const prompt = `Generate a placement report summary for the year ${year}.
                 
                 Data:
                 - Total Students: ${totalStudents}
                 - Placed Students: ${placedStudents}
                 - Placement Rate: ${placementRate}%
                 
-                Provide:
-                1. An executive summary of the placement season.
-                2. Key highlights (bullet points).
-                3. Strategic recommendations for the next year.`
-            })
+                Provide a JSON object with:
+                {
+                    "summary": "An executive summary of the placement season.",
+                    "highlights": ["Key highlights (bullet points)"],
+                    "recommendations": ["Strategic recommendations for the next year"]
+                }`
+
+            const result = await model.generateContent(prompt)
+            const object = JSON.parse(result.response.text())
 
             return NextResponse.json({
                 success: true,
                 data: object
             })
-        } catch (e) {
-            return NextResponse.json({ error: "Failed to generate report" }, { status: 500 })
+        } catch (e: any) {
+            console.error("Error generating report:", e)
+            return NextResponse.json({ error: e.message || "Failed to generate report" }, { status: 500 })
         }
     }
 

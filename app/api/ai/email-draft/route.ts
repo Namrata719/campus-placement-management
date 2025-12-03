@@ -1,21 +1,28 @@
-import { generateText } from "ai"
-import { google } from "@ai-sdk/google"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(req: Request) {
   const { purpose, keyPoints, recipientType, studentName } = await req.json()
 
-  const { text } = await generateText({
-    model: google("gemini-1.5-flash"),
-    prompt: `Write a professional email for a student in the placement process.
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+
+  const prompt = `Write a professional email for a student in the placement process.
 
 Student Name: ${studentName || "Student"}
 Recipient: ${recipientType || "HR"}
 Purpose: ${purpose}
 Key Points to Include: ${keyPoints}
 
-Write a polished, professional email that is appropriate for the placement context. Include proper greeting, body, and sign-off.`,
-    maxOutputTokens: 1000,
-  })
+Write a polished, professional email that is appropriate for the placement context. Include proper greeting, body, and sign-off.
+Return only the email text.`
 
-  return Response.json({ email: text })
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    return Response.json({ email: text })
+  } catch (error: any) {
+    console.error("Error generating email:", error)
+    return Response.json({ error: error.message || "Failed to generate email" }, { status: 500 })
+  }
 }

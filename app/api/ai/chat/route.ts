@@ -1,10 +1,11 @@
-import { convertToModelMessages, streamText, type UIMessage } from "ai"
-import { google } from "@ai-sdk/google"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export const maxDuration = 30
 
 export async function POST(req: Request) {
-  const { messages, context }: { messages: UIMessage[]; context?: string } = await req.json()
+  const { messages, context }: { messages: any[]; context?: string } = await req.json()
+
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
 
   let systemPrompt = ""
 
@@ -36,15 +37,65 @@ ${context ? `Additional Context: ${context}` : ""}
 Be helpful, encouraging, and provide practical, actionable advice. When asked about technical topics, give clear explanations with examples.`
   }
 
-  const prompt = convertToModelMessages(messages)
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: systemPrompt
+    })
 
-  const result = streamText({
-    model: google("gemini-1.5-flash"),
-    system: systemPrompt,
-    prompt,
-    maxOutputTokens: 2000,
-    abortSignal: req.signal,
-  })
+    // Convert messages to Gemini format
+    // The last message is the new prompt, so we take everything before it as history
+    // Gemini requires the first message in history to be from the user
+    let historyMessages = messages.slice(0, -1);
 
-  return result.toUIMessageStreamResponse()
+    // If the first message is from the assistant (e.g. welcome message), remove it or skip it
+    // Gemini history must start with a user message
+    while (historyMessages.length > 0 && historyMessages[0].role !== "user") {
+      historyMessages.shift();
+    }
+
+    const history = historyMessages.map((m) => ({
+      role: m.role === "user" ? "user" : "model",
+      parts: [{ text: m.content }],
+    }))
+
+    const lastMessage = messages[messages.length - 1].content
+
+    const chatSession = model.startChat({
+      history: history,
+    })
+
+    const result = await chatSession.sendMessageStream(lastMessage)
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder()
+        try {
+          for await (const chunk of result.stream) {
+            const chunkText = chunk.text()
+            if (chunkText) {
+              controller.enqueue(encoder.encode(chunkText))
+            }
+          }
+        } catch (error) {
+          console.error("Stream error:", error)
+          controller.error(error)
+        } finally {
+          controller.close()
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    })
+  } catch (error: any) {
+    console.error("Chat API Error:", error)
+    return new Response(JSON.stringify({ error: error.message || "Internal Server Error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
 }

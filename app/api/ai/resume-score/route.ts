@@ -1,25 +1,15 @@
-import { generateObject } from "ai"
-import { z } from "zod"
-
-const resumeScoreSchema = z.object({
-  matchScore: z.number().min(0).max(100),
-  strengths: z.array(z.string()),
-  gaps: z.array(z.string()),
-  suggestions: z.array(z.string()),
-  skillMatch: z.object({
-    matched: z.array(z.string()),
-    missing: z.array(z.string()),
-  }),
-  overallFeedback: z.string(),
-})
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(req: Request) {
   const { resumeText, jobDescription } = await req.json()
 
-  const { object } = await generateObject({
-    model: "openai/gpt-5-mini",
-    schema: resumeScoreSchema,
-    prompt: `Analyze this resume against the job description and provide a detailed match analysis.
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  })
+
+  const prompt = `Analyze this resume against the job description and provide a detailed match analysis.
 
 Resume:
 ${resumeText}
@@ -27,15 +17,26 @@ ${resumeText}
 Job Description:
 ${jobDescription}
 
-Provide:
-1. A match score from 0-100
-2. Key strengths that align with the role
-3. Gaps or missing requirements
-4. Specific suggestions to improve the resume for this role
-5. Skill matching analysis
-6. Overall feedback summary`,
-    maxOutputTokens: 2000,
-  })
+Provide a JSON object with:
+{
+  "matchScore": number (0-100),
+  "strengths": ["list of strengths"],
+  "gaps": ["list of gaps"],
+  "suggestions": ["list of suggestions"],
+  "skillMatch": {
+    "matched": ["list of matched skills"],
+    "missing": ["list of missing skills"]
+  },
+  "overallFeedback": "summary text"
+}`
 
-  return Response.json(object)
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    return Response.json(JSON.parse(text))
+  } catch (error: any) {
+    console.error("Error scoring resume:", error)
+    return Response.json({ error: error.message || "Failed to score resume" }, { status: 500 })
+  }
 }

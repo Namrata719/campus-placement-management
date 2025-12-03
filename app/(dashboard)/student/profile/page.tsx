@@ -46,75 +46,7 @@ import {
   Eye
 } from "lucide-react"
 
-// Mock student data
-const initialStudentData = {
-  firstName: "Amit",
-  lastName: "Kumar",
-  email: "amit.kumar@college.edu",
-  phone: "+91-9876543212",
-  gender: "male",
-  dateOfBirth: "2002-05-15",
-  address: {
-    street: "123 Main Street",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pincode: "400001",
-    country: "India",
-  },
-  department: "Computer Science & Engineering",
-  batch: "2024",
-  rollNumber: "CSE2024001",
-  cgpa: 8.5,
-  backlogs: 0,
-  tenthPercentage: 92,
-  twelfthPercentage: 89,
-  skills: ["JavaScript", "React", "Node.js", "Python", "SQL", "Git", "AWS"],
-  githubUrl: "https://github.com/amitkumar",
-  linkedinUrl: "https://linkedin.com/in/amitkumar",
-  portfolioUrl: "https://amitkumar.dev",
-  projects: [
-    {
-      id: "1",
-      title: "E-commerce Platform",
-      description: "Full-stack e-commerce platform with payment integration, user authentication, and admin dashboard.",
-      technologies: ["React", "Node.js", "MongoDB", "Stripe"],
-      url: "https://github.com/amitkumar/ecommerce",
-    },
-    {
-      id: "2",
-      title: "Task Management App",
-      description: "A collaborative task management application with real-time updates and team features.",
-      technologies: ["Next.js", "PostgreSQL", "Socket.io"],
-      url: "https://taskapp.demo.com",
-    },
-  ],
-  internships: [
-    {
-      id: "1",
-      company: "StartupXYZ",
-      role: "Frontend Developer Intern",
-      description: "Worked on React-based dashboard applications, implemented new features and fixed bugs.",
-      startDate: "2023-05-01",
-      endDate: "2023-07-31",
-      isCurrent: false,
-    },
-  ],
-  certifications: [
-    {
-      id: "1",
-      name: "AWS Certified Cloud Practitioner",
-      issuer: "Amazon Web Services",
-      issueDate: "2023-09-15",
-      credentialId: "AWS-CP-12345",
-      url: "https://aws.amazon.com/verify/aws-cp-12345",
-    },
-  ],
-  achievements: [
-    "Won 1st place in college hackathon 2023",
-    "Published research paper on ML algorithms",
-    "Open source contributor - 500+ GitHub contributions",
-  ],
-}
+
 
 export default function StudentProfilePage() {
   const [studentData, setStudentData] = useState<any>(null)
@@ -258,8 +190,13 @@ export default function StudentProfilePage() {
       const res = await fetch("/api/student/profile")
       const json = await res.json()
       if (json.success) {
-        setStudentData(json.data)
-        setEditedData(json.data)
+        const profileData = json.data
+        // Ensure address object exists to prevent crashes
+        if (!profileData.address) {
+          profileData.address = { street: "", city: "", state: "", pincode: "", country: "" }
+        }
+        setStudentData(profileData)
+        setEditedData(profileData)
       }
     } catch (error) {
       console.error("Failed to fetch profile", error)
@@ -489,7 +426,7 @@ export default function StudentProfilePage() {
                   </span>
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {data.address.city}, {data.address.state}
+                    {data.address?.city}, {data.address?.state}
                   </span>
                 </div>
 

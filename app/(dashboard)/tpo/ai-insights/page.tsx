@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useChat } from "@ai-sdk/react"
+
 
 export default function TPOAIInsightsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
@@ -44,26 +44,16 @@ Salary: Competitive`)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [improvedJdOpen, setImprovedJdOpen] = useState(false)
 
-  // Chat Hook
-  const { messages, append } = useChat({
-    api: "/api/ai/chat",
-    body: {
-      context: "policy - Campus Placement Policy Assistant"
-    },
-    initialMessages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        content: "Hello! I'm the placement policy assistant. I can help students with questions about eligibility criteria, placement rules, and FAQs."
-      }
-    ],
-    onError: (error: Error) => {
-      console.error("Chat error:", error)
-      toast.error("Failed to send message")
+  // Chat State
+  const [messages, setMessages] = useState<any[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content: "Hello! I'm the placement policy assistant. I can help students with questions about eligibility criteria, placement rules, and FAQs."
     }
-  } as any) as any
-
+  ])
   const [input, setInput] = useState("")
+  const [isChatLoading, setIsChatLoading] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value)
@@ -73,13 +63,64 @@ Salary: Competitive`)
     e.preventDefault()
     if (!input.trim()) return
 
-    const userMessage = input
-    setInput("")
-
-    await append({
+    const userMessage = {
+      id: Date.now().toString(),
       role: "user",
-      content: userMessage
-    })
+      content: input
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInput("")
+    setIsChatLoading(true)
+
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          context: "policy - Campus Placement Policy Assistant"
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to send message")
+      }
+      if (!response.body) throw new Error("No response body")
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let assistantMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "",
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        assistantMessage = {
+          ...assistantMessage,
+          content: assistantMessage.content + chunk
+        }
+
+        setMessages((prev) => {
+          const newMessages = [...prev]
+          newMessages[newMessages.length - 1] = assistantMessage
+          return newMessages
+        })
+      }
+    } catch (error) {
+      console.error("Chat error:", error)
+      toast.error("Failed to send message")
+    } finally {
+      setIsChatLoading(false)
+    }
   }
 
   useEffect(() => {

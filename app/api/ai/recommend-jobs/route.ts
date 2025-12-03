@@ -1,25 +1,15 @@
-import { generateObject } from "ai"
-import { z } from "zod"
-import { google } from "@ai-sdk/google"
-
-const jobRecommendationSchema = z.object({
-  recommendations: z.array(
-    z.object({
-      jobId: z.string(),
-      matchScore: z.number(),
-      reasons: z.array(z.string()),
-      fitSummary: z.string(),
-    }),
-  ),
-})
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(req: Request) {
   const { studentProfile, availableJobs } = await req.json()
 
-  const { object } = await generateObject({
-    model: google("gemini-1.5-flash"),
-    schema: jobRecommendationSchema,
-    prompt: `Based on the student's profile and preferences, recommend the most suitable jobs with explanations.
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  })
+
+  const prompt = `Based on the student's profile and preferences, recommend the most suitable jobs with explanations.
 
 Student Profile:
 ${JSON.stringify(studentProfile, null, 2)}
@@ -27,12 +17,25 @@ ${JSON.stringify(studentProfile, null, 2)}
 Available Jobs:
 ${JSON.stringify(availableJobs, null, 2)}
 
-For each recommended job, provide:
-1. Match score (0-100)
-2. Clear reasons why this job is a good fit
-3. A brief summary of the fit`,
-    maxOutputTokens: 2000,
-  })
+Provide a JSON object with:
+{
+  "recommendations": [
+    {
+      "jobId": "id_from_available_jobs",
+      "matchScore": number (0-100),
+      "reasons": ["list of reasons"],
+      "fitSummary": "summary text"
+    }
+  ]
+}`
 
-  return Response.json(object)
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    return Response.json(JSON.parse(text))
+  } catch (error) {
+    console.error("Error recommending jobs:", error)
+    return Response.json({ error: "Failed to recommend jobs" }, { status: 500 })
+  }
 }

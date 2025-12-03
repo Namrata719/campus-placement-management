@@ -1,47 +1,48 @@
-import { generateObject } from "ai"
-import { z } from "zod"
-import { google } from "@ai-sdk/google"
-
-const feedbackSummarySchema = z.object({
-  candidateName: z.string(),
-  overallScore: z.number().min(1).max(10),
-  strengths: z.array(z.string()),
-  areasForImprovement: z.array(z.string()),
-  technicalAssessment: z.object({
-    score: z.number().min(1).max(10),
-    summary: z.string(),
-  }),
-  communicationAssessment: z.object({
-    score: z.number().min(1).max(10),
-    summary: z.string(),
-  }),
-  recommendation: z.enum(["strong_hire", "hire", "maybe", "no_hire"]),
-  recommendationReasoning: z.string(),
-  nextSteps: z.string(),
-})
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(req: Request) {
   const { candidateName, interviewRound, feedbackText } = await req.json()
 
-  const { object } = await generateObject({
-    model: google("gemini-1.5-flash"),
-    schema: feedbackSummarySchema,
-    prompt: `Summarize this interview feedback for ${candidateName}.
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  })
+
+  const prompt = `Summarize this interview feedback for ${candidateName}.
 
 Interview Round: ${interviewRound}
 
 Raw Feedback:
 ${feedbackText}
 
-Provide a structured summary with:
-1. Overall score
-2. Key strengths
-3. Areas for improvement
-4. Technical and communication assessments
-5. Final recommendation with reasoning
-6. Suggested next steps`,
-    maxOutputTokens: 2000,
-  })
+Provide a structured JSON summary with:
+{
+  "candidateName": "${candidateName}",
+  "overallScore": number (1-10),
+  "strengths": ["list of strengths"],
+  "areasForImprovement": ["list of areas for improvement"],
+  "technicalAssessment": {
+    "score": number (1-10),
+    "summary": "summary text"
+  },
+  "communicationAssessment": {
+    "score": number (1-10),
+    "summary": "summary text"
+  },
+  "recommendation": "strong_hire" | "hire" | "maybe" | "no_hire",
+  "recommendationReasoning": "reasoning text",
+  "nextSteps": "suggested next steps",
+  "summary": "A brief professional summary of the candidate's performance"
+}`
 
-  return Response.json(object)
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    return Response.json(JSON.parse(text))
+  } catch (error) {
+    console.error("Error summarizing feedback:", error)
+    return Response.json({ error: "Failed to summarize feedback" }, { status: 500 })
+  }
 }
