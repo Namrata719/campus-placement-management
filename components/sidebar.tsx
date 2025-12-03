@@ -40,6 +40,7 @@ import {
   Mail,
   Award,
   GitBranch,
+  Video,
 } from "lucide-react"
 
 interface NavItem {
@@ -56,6 +57,7 @@ const studentNavItems: NavItem[] = [
   { title: "My Profile", href: "/student/profile", icon: FileText },
   { title: "Resume Manager", href: "/student/resume", icon: FileSearch },
   { title: "Schedule", href: "/student/schedule", icon: Calendar },
+  { title: "Interviews", href: "/student/interviews", icon: Video },
   { title: "AI Career Coach", href: "/student/ai-coach", icon: Sparkles },
   { title: "Skill Analysis", href: "/student/skill-analysis", icon: Target },
   { title: "Email Helper", href: "/student/email-helper", icon: Mail },

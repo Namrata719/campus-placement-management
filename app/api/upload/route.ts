@@ -23,6 +23,13 @@ export async function POST(req: NextRequest) {
         // Create unique filename
         const filename = `${Date.now()}-${file.name.replace(/\s/g, '-')}`
         const uploadDir = path.join(process.cwd(), "public/uploads")
+
+        // Ensure directory exists
+        const fs = require('fs')
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
         const filepath = path.join(uploadDir, filename)
 
         await writeFile(filepath, buffer)

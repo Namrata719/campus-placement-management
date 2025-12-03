@@ -13,11 +13,11 @@ import { Calendar, MapPin, Plus, Users, ChevronLeft, ChevronRight, Sparkles, Loa
 import { toast } from "sonner"
 
 const eventTypes = [
-  { value: "PPT", label: "Pre-Placement Talk", color: "bg-blue-500" },
-  { value: "Test", label: "Online Test", color: "bg-purple-500" },
-  { value: "GD", label: "Group Discussion", color: "bg-orange-500" },
-  { value: "Interview", label: "Interview", color: "bg-green-500" },
-  { value: "HR", label: "HR Round", color: "bg-pink-500" },
+  { value: "ppt", label: "Pre-Placement Talk", color: "bg-blue-500" },
+  { value: "online_test", label: "Online Test", color: "bg-purple-500" },
+  { value: "gd", label: "Group Discussion", color: "bg-orange-500" },
+  { value: "technical_interview", label: "Technical Interview", color: "bg-green-500" },
+  { value: "hr_interview", label: "HR Round", color: "bg-pink-500" },
 ]
 
 export default function TPOSchedulePage() {
@@ -310,7 +310,7 @@ export default function TPOSchedulePage() {
                   return (
                     <div key={event.id} className="p-3 rounded-lg border">
                       <div className="flex items-start justify-between mb-2">
-                        <Badge className={typeInfo?.color}>{event.type}</Badge>
+                        <Badge className={typeInfo?.color}>{typeInfo?.label}</Badge>
                         <Badge variant="outline" className="text-xs">
                           {event.mode}
                         </Badge>
@@ -319,7 +319,7 @@ export default function TPOSchedulePage() {
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(event.date).toLocaleDateString()} at {event.time}
+                          {new Date(event.date).toLocaleDateString()} at {event.startTime}
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
@@ -327,7 +327,7 @@ export default function TPOSchedulePage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="h-3 w-3" />
-                          {event.attendees} expected
+                          {event.registeredCount} registered
                         </div>
                       </div>
                     </div>

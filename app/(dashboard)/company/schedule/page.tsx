@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,68 +9,117 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, MapPin, Plus, Users, Video, Send, CheckCircle } from "lucide-react"
-
-const scheduleRequests = [
-  {
-    id: "1",
-    type: "PPT",
-    title: "Pre-Placement Talk",
-    requestedDate: "2024-12-15",
-    requestedTime: "10:00 AM",
-    duration: "2 hours",
-    mode: "Offline",
-    venue: "Pending",
-    status: "approved",
-    expectedAttendees: 150,
-    notes: "Need projector and mic setup",
-  },
-  {
-    id: "2",
-    type: "Test",
-    title: "Online Assessment",
-    requestedDate: "2024-12-16",
-    requestedTime: "09:00 AM",
-    duration: "1.5 hours",
-    mode: "Online",
-    venue: "HackerRank Platform",
-    status: "approved",
-    expectedAttendees: 45,
-    notes: "Will share test link 1 day before",
-  },
-  {
-    id: "3",
-    type: "Interview",
-    title: "Technical Interview R1",
-    requestedDate: "2024-12-18",
-    requestedTime: "11:00 AM",
-    duration: "4 hours",
-    mode: "Offline",
-    venue: "Pending",
-    status: "pending",
-    expectedAttendees: 12,
-    notes: "Need 4 separate interview rooms",
-  },
-  {
-    id: "4",
-    type: "Interview",
-    title: "HR Round",
-    requestedDate: "2024-12-19",
-    requestedTime: "10:00 AM",
-    duration: "3 hours",
-    mode: "Online",
-    venue: "MS Teams",
-    status: "pending",
-    expectedAttendees: 6,
-    notes: "",
-  },
-]
-
-const confirmedSchedule = scheduleRequests.filter((s) => s.status === "approved")
-const pendingRequests = scheduleRequests.filter((s) => s.status === "pending")
+import { Calendar, Clock, MapPin, Plus, Users, Video, Send, CheckCircle, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function CompanySchedulePage() {
   const [isRequestOpen, setIsRequestOpen] = useState(false)
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+
+  // Form State
+  const [eventType, setEventType] = useState("")
+  const [date, setDate] = useState("")
+  const [time, setTime] = useState("")
+  const [duration, setDuration] = useState("")
+  const [mode, setMode] = useState("")
+  const [participants, setParticipants] = useState("")
+  const [notes, setNotes] = useState("")
+
+  useEffect(() => {
+    fetchSchedule()
+  }, [])
+
+  const fetchSchedule = async () => {
+    try {
+      const res = await fetch("/api/company/schedule")
+      const data = await res.json()
+      if (data.success) {
+        setEvents(data.events)
+      } else {
+        toast.error("Failed to load schedule")
+      }
+    } catch (error) {
+      console.error("Error fetching schedule:", error)
+      toast.error("Failed to load schedule")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!eventType || !date || !time || !duration || !mode || !participants) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const endTime = calculateEndTime(time, duration)
+
+      const res = await fetch("/api/company/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `${getEventLabel(eventType)}`,
+          type: eventType,
+          date,
+          startTime: time,
+          endTime,
+          mode,
+          venue: mode === "online" ? "Online" : "Pending",
+          description: notes,
+          status: "scheduled" // In a real flow, this might be 'pending' approval
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Schedule request submitted")
+        setIsRequestOpen(false)
+        fetchSchedule()
+        // Reset form
+        setEventType("")
+        setDate("")
+        setTime("")
+        setDuration("")
+        setMode("")
+        setParticipants("")
+        setNotes("")
+      } else {
+        toast.error(data.error || "Failed to submit request")
+      }
+    } catch (error) {
+      console.error("Error submitting request:", error)
+      toast.error("Failed to submit request")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const calculateEndTime = (start: string, duration: string) => {
+    // Simple calculation, can be improved
+    return "17:00" // Placeholder
+  }
+
+  const getEventLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      ppt: "Pre-Placement Talk",
+      test: "Online Assessment",
+      gd: "Group Discussion",
+      technical_interview: "Technical Interview",
+      hr_interview: "HR Interview"
+    }
+    return labels[type] || "Event"
+  }
+
+  const confirmedSchedule = events.filter((s) => s.status === "scheduled" || s.status === "ongoing" || s.status === "completed")
+  const pendingRequests = events.filter((s) => s.status === "pending")
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
   return (
     <div className="space-y-6">
@@ -92,36 +141,36 @@ export default function CompanySchedulePage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Event Type</Label>
-                <Select>
+                <Label>Event Type <span className="text-red-500">*</span></Label>
+                <Select value={eventType} onValueChange={setEventType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select event type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ppt">Pre-Placement Talk</SelectItem>
-                    <SelectItem value="test">Online Assessment</SelectItem>
+                    <SelectItem value="online_test">Online Assessment</SelectItem>
                     <SelectItem value="gd">Group Discussion</SelectItem>
-                    <SelectItem value="interview-tech">Technical Interview</SelectItem>
-                    <SelectItem value="interview-hr">HR Interview</SelectItem>
+                    <SelectItem value="technical_interview">Technical Interview</SelectItem>
+                    <SelectItem value="hr_interview">HR Interview</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Preferred Date</Label>
-                  <Input type="date" />
+                  <Label>Preferred Date <span className="text-red-500">*</span></Label>
+                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Preferred Time</Label>
-                  <Input type="time" />
+                  <Label>Preferred Time <span className="text-red-500">*</span></Label>
+                  <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Duration</Label>
-                  <Select>
+                  <Label>Duration <span className="text-red-500">*</span></Label>
+                  <Select value={duration} onValueChange={setDuration}>
                     <SelectTrigger>
                       <SelectValue placeholder="Duration" />
                     </SelectTrigger>
@@ -136,32 +185,31 @@ export default function CompanySchedulePage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Mode</Label>
-                  <Select>
+                  <Label>Mode <span className="text-red-500">*</span></Label>
+                  <Select value={mode} onValueChange={setMode}>
                     <SelectTrigger>
                       <SelectValue placeholder="Mode" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="offline">Offline</SelectItem>
                       <SelectItem value="online">Online</SelectItem>
-                      <SelectItem value="hybrid">Hybrid</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Expected Participants</Label>
-                <Input type="number" placeholder="e.g., 50" />
+                <Label>Expected Participants <span className="text-red-500">*</span></Label>
+                <Input type="number" placeholder="e.g., 50" value={participants} onChange={(e) => setParticipants(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label>Additional Notes</Label>
-                <Textarea placeholder="Any specific requirements or preferences..." rows={3} />
+                <Textarea placeholder="Any specific requirements or preferences..." rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </div>
 
-              <Button className="w-full" onClick={() => setIsRequestOpen(false)}>
-                <Send className="mr-2 h-4 w-4" />
+              <Button className="w-full" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                 Submit Request
               </Button>
             </div>
@@ -204,9 +252,9 @@ export default function CompanySchedulePage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {scheduleRequests.reduce((acc, s) => acc + s.expectedAttendees, 0)}
+                  {events.reduce((acc, s) => acc + (s.registeredStudents?.length || 0), 0)}
                 </p>
-                <p className="text-sm text-muted-foreground">Expected Candidates</p>
+                <p className="text-sm text-muted-foreground">Total Registered</p>
               </div>
             </div>
           </CardContent>
@@ -232,27 +280,27 @@ export default function CompanySchedulePage() {
                     <div>
                       <h4 className="font-medium">{event.title}</h4>
                       <Badge variant="outline" className="mt-1">
-                        {event.type}
+                        {getEventLabel(event.type)}
                       </Badge>
                     </div>
-                    <Badge className="bg-green-500">Confirmed</Badge>
+                    <Badge className="bg-green-500">{event.status}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      {new Date(event.requestedDate).toLocaleDateString()}
+                      {new Date(event.date).toLocaleDateString()}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      {event.requestedTime} ({event.duration})
+                      {event.startTime} - {event.endTime}
                     </div>
                     <div className="flex items-center gap-2">
-                      {event.mode === "Online" ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
-                      {event.venue}
+                      {event.mode === "online" ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
+                      {event.venue || event.mode}
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      {event.expectedAttendees} expected
+                      {event.registeredStudents?.length || 0} registered
                     </div>
                   </div>
                 </div>
@@ -279,7 +327,7 @@ export default function CompanySchedulePage() {
                     <div>
                       <h4 className="font-medium">{event.title}</h4>
                       <Badge variant="outline" className="mt-1">
-                        {event.type}
+                        {getEventLabel(event.type)}
                       </Badge>
                     </div>
                     <Badge variant="secondary">
@@ -290,23 +338,19 @@ export default function CompanySchedulePage() {
                   <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      {new Date(event.requestedDate).toLocaleDateString()}
+                      {new Date(event.date).toLocaleDateString()}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      {event.requestedTime} ({event.duration})
+                      {event.startTime}
                     </div>
                     <div className="flex items-center gap-2">
-                      {event.mode === "Online" ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
+                      {event.mode === "online" ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
                       {event.mode}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      {event.expectedAttendees} expected
-                    </div>
                   </div>
-                  {event.notes && (
-                    <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">Note: {event.notes}</p>
+                  {event.description && (
+                    <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">Note: {event.description}</p>
                   )}
                 </div>
               ))

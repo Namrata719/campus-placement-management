@@ -1254,69 +1254,6 @@ export default function StudentProfilePage() {
               </CardContent>
             </Card>
           </TabsContent >
-
-          {/* Documents Tab */}
-          < TabsContent value="documents" >
-            <Card className="bg-card">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Resumes & Documents</CardTitle>
-                    <CardDescription>Manage your resumes and other documents</CardDescription>
-                  </div>
-                  {isEditing && (
-                    <div>
-                      <Button size="sm" className="gap-2" onClick={() => document.getElementById('resume-upload')?.click()} disabled={isUploading}>
-                        <Upload className="h-4 w-4" />
-                        {isUploading ? "Uploading..." : "Upload Resume"}
-                      </Button>
-                      <input id="resume-upload" type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} />
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {(!data.resumes || data.resumes.length === 0) ? (
-                  <p className="text-muted-foreground text-center py-8">No resumes uploaded yet</p>
-                ) : (
-                  <div className="space-y-4">
-                    {data.resumes.map((resume: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{resume.name}</h4>
-                            <p className="text-xs text-muted-foreground">
-                              Uploaded: {new Date(resume.uploadedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </a>
-                          <a href={resume.fileUrl} download>
-                            <Button variant="ghost" size="icon">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </a>
-                          {isEditing && (
-                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteResume(index)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent >
         </Tabs >
       </div >
     </div >

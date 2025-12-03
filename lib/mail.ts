@@ -1,6 +1,6 @@
 import { sendEmail as sendEmailBase } from './email';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://placeme-campus-placement-management.vercel.app/';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://placeme-campus-placement-management.vercel.app';
 const PRIMARY_COLOR = '#2563eb'; // Blue-600
 const SUCCESS_COLOR = '#16a34a'; // Green-600
 const WARNING_COLOR = '#ca8a04'; // Yellow-600
@@ -174,7 +174,7 @@ export const sendInterviewScheduled = async (studentEmail: string, jobTitle: str
 
     const html = getEmailTemplate('Interview Scheduled 📅', content, {
         text: 'View Schedule',
-        url: `https://placeme-campus-placement-management.vercel.app//student/interviews`
+        url: `https://placeme-campus-placement-management.vercel.app/student/interviews`
     });
 
     await sendEmail(studentEmail, subject, html);

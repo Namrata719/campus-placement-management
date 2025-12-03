@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
         await connectDB()
 
-        const events = await PlacementEvent.find().sort({ startTime: 1 }).lean()
+        const events = await PlacementEvent.find().sort({ date: 1, startTime: 1 }).lean()
 
         const companyIds = events.map((e: any) => e.companyId).filter((id: any) => id)
         const companies = await Company.find({ _id: { $in: companyIds } }).lean()
@@ -25,14 +25,14 @@ export async function GET(req: NextRequest) {
                 id: event._id,
                 title: event.title,
                 company: company ? company.name : "N/A",
-                type: event.eventType,
-                date: new Date(event.startTime).toISOString().split('T')[0],
-                time: new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                duration: "2 hours", // Placeholder, calculate if endTime exists
-                venue: event.location || "Online",
-                mode: event.location && event.location.toLowerCase().includes("online") ? "Online" : "Offline",
-                attendees: 0, // Placeholder
-                status: "upcoming"
+                type: event.type,
+                date: new Date(event.date).toISOString().split('T')[0],
+                startTime: event.startTime,
+                endTime: event.endTime,
+                venue: event.venue || "Online",
+                mode: event.mode,
+                status: event.status,
+                registeredCount: event.registeredStudents?.length || 0
             }
         })
 
@@ -56,12 +56,15 @@ export async function POST(req: NextRequest) {
         const newEvent = await PlacementEvent.create({
             title: body.title,
             companyId: body.companyId,
-            eventType: body.type,
-            startTime: new Date(`${body.date}T${body.time}`),
-            endTime: new Date(new Date(`${body.date}T${body.time}`).getTime() + 2 * 60 * 60 * 1000), // Default 2 hours
-            location: body.venue,
-            description: body.instructions,
-            status: "scheduled"
+            type: body.type,
+            date: new Date(body.date),
+            startTime: body.startTime,
+            endTime: body.endTime,
+            venue: body.venue,
+            mode: body.mode,
+            description: body.description,
+            status: "scheduled",
+            createdBy: userId
         })
 
         return NextResponse.json({ success: true, data: newEvent })
