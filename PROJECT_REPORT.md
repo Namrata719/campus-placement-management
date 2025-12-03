@@ -7,8 +7,8 @@
 
 **Project Title:** PlaceMe - Campus Placement Management System
 
-**Institution:** Sanjay Bhokare Group of Institutes, Miraj  
-**Department:** Computer Science & Engineering  
+**Institution:** SKN Sinhgad College of Engineering, Korti  
+**Department:** Electronics & Telecommunication Engineering  
 **Academic Year:** 2022-2026 
 **Project Type:** Final Year Project
 
@@ -16,14 +16,11 @@
 
 ### **Developed By**
 
-**Team Members:**
-1. **Mayuri Vitthal Auji** - Full Stack Development
-2. **Mohini Kerba Dhulgunde** - Backend Development  
-3. **Namrata Prakash Mane** - Frontend Development
-4. **Nikhil Patil** - Database & API Development
+**Developer:**
+**Akash Chandrashekhar Katte** - Software Developer
 
 **Under the Guidance of:**  
-Department of Computer Science & Engineering, SBGI Miraj
+Department of Electronics & Telecommunication Engineering, SKN Sinhgad College of Engineering
 
 ---
 
@@ -407,31 +404,16 @@ This project demonstrates the practical application of full-stack web developmen
 - Student Dashboard
 - TPO Dashboard
 - Company Dashboard
-- Job Listings
-- Application Tracking
-- Profile Management
-
-#### B. Code Repository
-- GitHub: [\[Project Repository Link\]](https://github.com/Namrata719/campus-placement-management)
-- Live Demo: https://place-me.vercel.app/ (Development)
-
-#### C. Installation Guide
-See README.md for detailed setup instructions.
-
----
 
 **Declaration:**
 
-We hereby declare that this project work titled "Campus Placement Management System (PlaceMe)" is our original work and has been carried out under the guidance of the Department of Computer Science & Engineering, Sanjay Bhokare Group of Institutes, Miraj.
+We hereby declare that this project work titled "Campus Placement Management System (PlaceMe)" is my original work and has been carried out under the guidance of the Department of Electronics & Telecommunication Engineering, SKN Sinhgad College of Engineering, Korti.
 
-**Team Members:**
-- Mayuri Vitthal Auji
-- Mohini Kerba Dhulgunde
-- Namrata Prakash Mane
-- Nikhil Patil
+**Developer:**
+- Akash Chandrashekhar Katte
 
 **Date:** December 2025
 
 ---
 
-*This project is submitted in partial fulfillment of the requirements for the Bachelor of Engineering (Computer Science) degree.*
+*This project is submitted in partial fulfillment of the requirements for the Bachelor of Technology (Electronics & Telecommunication Engineering) degree.*

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![SBGI Logo](public/images/sbgi-logo.png)
+![SKN Sinhgad Logo](public/images/skn-logo.png)
 
 **A comprehensive placement management platform for educational institutions**
 
@@ -18,15 +18,13 @@
 
 ## 📖 About
 
-PlaceMe is a modern, feature-rich Campus Placement Management System developed by Computer Science Engineering students of **Sanjay Bhokare Group of Institutes, Miraj**. The platform streamlines the entire placement process by connecting students, companies, and placement officers through an intuitive web application.
+PlaceMe is a modern, feature-rich Campus Placement Management System developed by **Akash Chandrashekhar Katte**, a B.Tech Electronics & Telecommunication Engineering student from **SKN Sinhgad College of Engineering, Korti**. The platform streamlines the entire placement process by connecting students, companies, and placement officers through an intuitive web application.
 
-### 👥 Development Team
+### 👨‍💻 Developer
 
-**Final Year CSE Students (2024-25):**
-- **Mayuri Vitthal Auji** - Full Stack Development
-- **Mohini Kerba Dhulgunde** - Backend Development
-- **Namrata Prakash Mane** - Frontend Development
-- **Nikhil Patil** - Database & API Development
+**Akash Chandrashekhar Katte**
+- B.Tech Electronics & Telecommunication Engineering (2022-26)
+- SKN Sinhgad College of Engineering, Korti, Pandharpur
 
 ---
 
@@ -411,21 +409,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Institution:** Sanjay Bhokare Group of Institutes, Miraj  
-**Department:** Computer Science & Engineering  
-**Email:** placement@sbgi.edu.in
+**Institution:** SKN Sinhgad College of Engineering, Korti  
+**Department:** Electronics & Telecommunication Engineering  
+**Email:** info@sinhgad.edu
 
-**Development Team:**
-- Mayuri Vitthal Auji
-- Mohini Kerba Dhulgunde
-- Namrata Prakash Mane
-- Nikhil Patil
+**Developer:**
+- Akash Chandrashekhar Katte
 
 ---
 
 ## 🙏 Acknowledgments
 
-- Department of CSE, SBGI Miraj for guidance and support
+- Department of ENTC, SKN Sinhgad College of Engineering for guidance and support
 - Open-source community for amazing tools and libraries
 - MongoDB Atlas for database hosting
 - Vercel for seamless deployment

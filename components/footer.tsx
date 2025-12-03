@@ -11,22 +11,22 @@ export function Footer() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <Image
-                                src="/images/sbgi-logo.png"
-                                alt="SBGI Logo"
+                                src="/images/skn-logo.png"
+                                alt="SKN Sinhgad College Logo"
                                 width={50}
                                 height={50}
                                 className="rounded-full"
                             />
                             <div>
-                                <h3 className="font-semibold">SBGI Miraj</h3>
-                                <p className="text-xs text-muted-foreground">Excellence in Education</p>
+                                <h3 className="font-semibold">SKN Sinhgad</h3>
+                                <p className="text-xs text-muted-foreground">Engineering Excellence</p>
                             </div>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Sanjay Bhokare Group of Institutes, Miraj
+                            SKN Sinhgad College of Engineering
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Department of Computer Science & Engineering
+                            Department of Electronics & Telecommunication
                         </p>
                     </div>
 
@@ -57,17 +57,14 @@ export function Footer() {
                         </ul>
                     </div>
 
-                    {/* Development Team */}
+                    {/* Developer Info */}
                     <div>
                         <h3 className="font-semibold mb-4">Developed By</h3>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                            <li>• Mayuri Vitthal Auji</li>
-                            <li>• Mohini Kerba Dhulgunde</li>
-                            <li>• Namrata Prakash Mane</li>
-                            <li>• Nikhil Patil</li>
+                            <li>• Akash Chandrashekhar Katte</li>
                         </ul>
                         <p className="text-xs text-muted-foreground mt-3">
-                            CSE Final Year (2022-26)
+                            B.Tech ENTC (2022-26)
                         </p>
                     </div>
 
@@ -77,11 +74,11 @@ export function Footer() {
                         <ul className="space-y-3 text-sm text-muted-foreground">
                             <li className="flex items-start gap-2">
                                 <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                                <span>Miraj, Maharashtra, India</span>
+                                <span>Korti, Pandharpur, Maharashtra</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 shrink-0" />
-                                <span>placement@sbgi.edu.in</span>
+                                <span>info@sinhgad.edu</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 <Phone className="h-4 w-4 shrink-0" />

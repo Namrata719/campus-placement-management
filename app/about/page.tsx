@@ -9,26 +9,12 @@ import { Building2, Users, Target, Award, GraduationCap, Code, Github, Linkedin 
 
 const developers = [
     {
-        name: "Mayuri Vitthal Auji",
-        role: "Full Stack Developer",
-        batch: "Final Year",
-    },
-    {
-        name: "Mohini Kerba Dhulgunde",
-        role: "Backend Developer",
-        batch: "Final Year",
-    },
-    {
-        name: "Namrata Prakash Mane",
-        role: "Frontend Developer",
-        batch: "Final Year",
-    },
-    {
-        name: "Nikhil Patil",
-        role: "Database & API Developer",
-        batch: "Final Year",
+        name: "Akash Chandrashekhar Katte",
+        role: "Software Developer",
+        batch: "B.Tech ENTC (2022-26)",
     },
 ]
+
 
 const features = [
     {
@@ -76,8 +62,8 @@ export default function AboutPage() {
                 <div className="container mx-auto px-4 text-center">
                     <div className="flex justify-center mb-6">
                         <Image
-                            src="/images/sbgi-logo.png"
-                            alt="SBGI Logo"
+                            src="/images/skn-logo.png"
+                            alt="SKN Sinhgad College Logo"
                             width={150}
                             height={150}
                             className="rounded-full shadow-lg"
@@ -87,19 +73,19 @@ export default function AboutPage() {
                         Campus Placement Management System
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
-                        Developed by Computer Science Engineering Students of
+                        Developed by
                     </p>
                     <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-8">
-                        Sanjay Bhokare Group of Institutes, Miraj
+                        Akash Chandrashekhar Katte - SKN Sinhgad College of Engineering
                     </h2>
                     <div className="flex gap-4 justify-center flex-wrap">
                         <Badge variant="secondary" className="px-4 py-2 text-base">
                             <GraduationCap className="h-4 w-4 mr-2" />
-                            Final Year Project 2022-26
+                            B.Tech ENTC (2022-26)
                         </Badge>
                         <Badge variant="secondary" className="px-4 py-2 text-base">
                             <Code className="h-4 w-4 mr-2" />
-                            Computer Science Engineering
+                            Electronics & Telecommunication Engineering
                         </Badge>
                     </div>
                 </div>
@@ -149,21 +135,21 @@ export default function AboutPage() {
                 </div>
             </section>
 
-            {/* Development Team */}
+            {/* Developer */}
             <section className="py-16 container mx-auto px-4">
-                <h2 className="text-3xl font-bold mb-12 text-center">Development Team</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <h2 className="text-3xl font-bold mb-12 text-center">Developer</h2>
+                <div className="flex justify-center">
                     {developers.map((dev) => (
-                        <Card key={dev.name} className="bg-card hover:shadow-lg transition-shadow">
+                        <Card key={dev.name} className="bg-card hover:shadow-lg transition-shadow max-w-md">
                             <CardHeader>
-                                <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                                    <Users className="h-12 w-12 text-primary" />
+                                <div className="h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                                    <Users className="h-16 w-16 text-primary" />
                                 </div>
-                                <CardTitle className="text-center text-lg">{dev.name}</CardTitle>
+                                <CardTitle className="text-center text-xl">{dev.name}</CardTitle>
                             </CardHeader>
                             <CardContent className="text-center">
-                                <p className="text-sm text-primary font-medium mb-2">{dev.role}</p>
-                                <Badge variant="secondary">{dev.batch}</Badge>
+                                <p className="text-base text-primary font-medium mb-3">{dev.role}</p>
+                                <Badge variant="secondary" className="text-sm px-3 py-1">{dev.batch}</Badge>
                             </CardContent>
                         </Card>
                     ))}
@@ -178,19 +164,19 @@ export default function AboutPage() {
                         <CardContent className="p-8">
                             <div className="flex justify-center mb-6">
                                 <Image
-                                    src="/images/sbgi-logo.png"
-                                    alt="SBGI Logo"
+                                    src="/images/skn-logo.png"
+                                    alt="SKN Sinhgad College Logo"
                                     width={120}
                                     height={120}
                                     className="rounded-full"
                                 />
                             </div>
                             <h3 className="text-2xl font-semibold mb-4">
-                                Sanjay Bhokare Group of Institutes, Miraj
+                                SKN Sinhgad College of Engineering, Korti
                             </h3>
                             <p className="text-muted-foreground leading-relaxed mb-6">
-                                SBGI is a premier educational institution committed to providing quality technical education and
-                                fostering innovation among students. The Computer Science & Engineering department is at the forefront
+                                SKN Sinhgad College of Engineering is a premier educational institution committed to providing quality technical education and
+                                fostering innovation among students. The Electronics & Telecommunication Engineering department is at the forefront
                                 of technological advancements, encouraging students to develop practical solutions to real-world
                                 problems.
                             </p>
